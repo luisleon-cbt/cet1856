@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 1 &bull; NAT &amp; PAT</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.skyb{background:var(--sky); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .panel svg{width:100%; height:auto; display:block;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden; margin-left:auto;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12.5px; padding:8px 16px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  /* translation table */
+  .xlate{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:14px 16px; margin-top:12px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--sky2);}
+  .xlate .title{color:var(--gold); font-size:11px; letter-spacing:2px; margin-bottom:8px;}
+  .xlate table{width:100%; border-collapse:collapse;}
+  .xlate th{text-align:left; color:#7C8DB0; font-weight:500; padding:4px 8px; border-bottom:1px solid #22345C; font-size:11.5px;}
+  .xlate td{padding:5px 8px; border-bottom:1px solid #22345C; color:#fff;}
+  .xlate td.g{color:var(--gold);}
+  /* terms */
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;}
+  .chip{font-family:'Chakra Petch',sans-serif; font-size:13.5px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:24px; padding:8px 18px; cursor:pointer;}
+  .chip.on{border-color:var(--gold); background:#2D4372;}
+  /* drill */
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  /* test prep */
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 1 // ARTIFACT 2 of 2</div>
+    <h1>NAT &amp; PAT</h1>
+    <p>Your whole private network hides behind a handful of public addresses, and the router at the edge rewrites every packet to make it work. Drive the NAT theater in all three modes, master the four address terms, then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. The NAT theater</h2>
+    <div class="sub">Send traffic from each PC to the web server and watch the edge router rewrite the source address. Switch modes and run it again: the translation table tells the whole story.</div>
+    <div class="panel">
+      <svg viewBox="0 0 1000 270" xmlns="http://www.w3.org/2000/svg" aria-label="NAT topology: inside hosts, edge router, internet server">
+        <rect x="16" y="24" width="330" height="222" rx="12" fill="#22345C" opacity="0.35"/>
+        <rect x="652" y="24" width="332" height="222" rx="12" fill="#22345C" opacity="0.18"/>
+        <text x="34" y="48" style="font-family:'IBM Plex Mono',monospace;font-size:12px;" fill="#6EB5DC">INSIDE &bull; 192.168.1.0/24 (private)</text>
+        <text x="670" y="48" style="font-family:'IBM Plex Mono',monospace;font-size:12px;" fill="#6EB5DC">OUTSIDE &bull; the internet (public)</text>
+
+        <line id="wA" x1="150" y1="100" x2="455" y2="132" stroke="#3D5178" stroke-width="3"/>
+        <line id="wB" x1="150" y1="196" x2="455" y2="152" stroke="#3D5178" stroke-width="3"/>
+        <line id="wO" x1="545" y1="142" x2="840" y2="142" stroke="#3D5178" stroke-width="3"/>
+
+        <!-- hosts -->
+        <g><rect x="74" y="74" width="60" height="40" rx="5" fill="#6EB5DC"/><rect x="82" y="81" width="44" height="25" rx="2" fill="#1B2A4A"/>
+          <text x="104" y="138" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">PC-A</text>
+          <text x="104" y="153" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">192.168.1.10</text></g>
+        <g><rect x="74" y="172" width="60" height="40" rx="5" fill="#6EB5DC"/><rect x="82" y="179" width="44" height="25" rx="2" fill="#1B2A4A"/>
+          <text x="104" y="236" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">PC-B</text>
+          <text x="104" y="251" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">192.168.1.11</text></g>
+
+        <!-- NAT router -->
+        <g><circle cx="500" cy="142" r="30" fill="#C9A227"/>
+          <path d="M486 142 h28 M500 128 v28 M490 132 l20 20 M510 132 l-20 20" stroke="#1B2A4A" stroke-width="2.6"/>
+          <text x="500" y="192" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">EDGE ROUTER (NAT)</text>
+          <text x="455" y="112" text-anchor="end" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">ip nat inside</text>
+          <text x="548" y="124" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">ip nat outside</text>
+          <text x="500" y="210" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#C9A227" id="poolLbl">public: 203.0.113.5</text></g>
+
+        <!-- server -->
+        <g><rect x="844" y="108" width="50" height="62" rx="7" fill="#6EB5DC"/><rect x="852" y="116" width="34" height="9" rx="2" fill="#1B2A4A"/><rect x="852" y="130" width="34" height="9" rx="2" fill="#1B2A4A"/><rect x="852" y="144" width="34" height="9" rx="2" fill="#1B2A4A"/>
+          <text x="869" y="190" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">WEB SERVER</text>
+          <text x="869" y="205" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">198.51.100.7</text></g>
+
+        <!-- packet -->
+        <g id="pkt" opacity="0">
+          <rect id="pktBox" x="-86" y="-16" width="172" height="32" rx="16" fill="#C9A227"/>
+          <text id="pktTxt" x="0" y="5" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:700;" fill="#1B2A4A">SRC 192.168.1.10</text>
+        </g>
+      </svg>
+
+      <div class="infobar"><span class="tag" id="nTag">READY // STATIC NAT</span><span id="nTxt">Static NAT: a <span class="hl">one-to-one, manually configured</span> mapping. PC-A is permanently 203.0.113.5 to the world; PC-B is permanently 203.0.113.6. Press a SEND button and watch the rewrite at the edge.</span><span class="exam" id="nExam">Exam angle: a server that must be reachable FROM the internet always needs static NAT.</span></div>
+
+      <div class="xlate">
+        <div class="title">NAT TRANSLATION TABLE (show ip nat translations)</div>
+        <table>
+          <tr><th>Inside local</th><th>Inside global</th><th>Mode</th></tr>
+          <tbody id="xbody"><tr><td colspan="3" style="color:#7C8DB0;">(empty: no traffic yet)</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="btns">
+        <button class="btn gold" id="sendA">SEND FROM PC-A</button>
+        <button class="btn skyb" id="sendB">SEND FROM PC-B</button>
+        <button class="btn ghost" id="natReset">RESET &#8634;</button>
+        <div class="mode">
+          <button id="mStatic" class="on">STATIC</button>
+          <button id="mDyn">DYNAMIC</button>
+          <button id="mPat">PAT</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>2. The four addresses</h2>
+    <div class="sub">NAT vocabulary decides several exam points. Click each term and lock in what it names.</div>
+    <div class="panel">
+      <div class="chips">
+        <button class="chip on" data-t="il">INSIDE LOCAL</button>
+        <button class="chip" data-t="ig">INSIDE GLOBAL</button>
+        <button class="chip" data-t="og">OUTSIDE GLOBAL</button>
+        <button class="chip" data-t="ol">OUTSIDE LOCAL</button>
+      </div>
+      <div class="infobar"><span class="tag" id="tTag">INSIDE LOCAL</span><span id="tTxt">The <span class="hl">private address of an inside host</span>, as seen inside your network. In the theater above: 192.168.1.10. "Inside" = whose address it is. "Local" = the inside view of it.</span><span class="exam" id="tExam">Exam angle: decode the terms in two steps. First word = whose host (inside/outside). Second word = seen from where (local = inside view, global = internet view).</span></div>
+    </div>
+
+    <h2>3. Terminology drill</h2>
+    <div class="sub">Six rounds. A description appears; name the term or concept. These exact distinctions appear on the exam.</div>
+    <div class="drill">
+      <div class="scen" id="tdScen">Six rounds covering the four addresses plus the NAT type decisions.</div>
+      <div class="opts" id="tdOpts"></div>
+      <div class="meta"><span>Round <b id="tdRound">0</b>/6</span><span>Score <b id="tdScore">0</b></span></div>
+      <button class="btn gold" id="tdStart" style="margin-top:16px;">START</button>
+      <div class="final" id="tdFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">NAT generates four reliable question patterns. Learn to recognize them on sight.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: which NAT type?</h3>
+      <p>Keyword mapping: <code>server reachable from the internet</code> &#8594; <strong>static NAT</strong> &bull; <code>pool of public addresses, first come first served</code> &#8594; <strong>dynamic NAT</strong> &bull; <code>many hosts, one public address</code> or <code>overload</code> &#8594; <strong>PAT</strong>. PAT is what virtually every real network (and your home router) runs.</p>
+      <span class="trap">Trap: dynamic NAT does NOT share addresses. One host holds one pool address until it times out. Sharing = PAT only.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: the vocabulary question</h3>
+      <p>Decode in two steps: first word = <strong>whose host</strong> (inside/outside), second word = <strong>seen from where</strong> (local = the inside view, global = the internet view). The pair the exam tests hardest: <code>inside local</code> = the private address; <code>inside global</code> = its public translation.</p>
+      <span class="trap">Trap: "the address of the inside host as seen by the outside world" = inside GLOBAL, not outside anything.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: how PAT tells sessions apart</h3>
+      <p>Hundreds of hosts share one public address because PAT appends a unique <strong>source port</strong> to each translation: 203.0.113.5:4001, :4002, :4003. The return packet's destination port is what routes it back to the right inside host.</p>
+      <span class="trap">Trap: "how does PAT distinguish between sessions?" The answer is port numbers, never MAC addresses or VLANs.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: the broken NAT checklist</h3>
+      <p>When NAT "does not work," the exam expects this order: are <code>ip nat inside</code> and <code>ip nat outside</code> on the correct interfaces? Does the ACL match the inside addresses? Does the pool or interface overload statement exist? Verify with <code>show ip nat translations</code> and <code>show ip nat statistics</code>.</p>
+      <span class="trap">Trap: an empty translation table does not mean NAT is broken: translations only appear AFTER matching traffic flows.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. Then take the graded 25-question Week 1 quiz in Canvas.</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering NAT concepts, static and dynamic NAT, PAT, and troubleshooting. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">Concepts<b id="bdC">0/0</b></div>
+          <div class="cell">Static / dynamic<b id="bdS">0/0</b></div>
+          <div class="cell">PAT<b id="bdP">0/0</b></div>
+          <div class="cell">Troubleshooting<b id="bdT">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you implement all three NAT modes in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W1S3</span> and <span style="font-family:'IBM Plex Mono',monospace;">W1S4</span>, read the live translation table, and troubleshoot broken NAT. Then take the <strong>Week 1 quiz in Canvas</strong> (25 questions, covers both artifacts).</div>
+</div>
+
+<script>
+/* ================= VIEWS ================= */
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+/* ================= 1. NAT THEATER ================= */
+const pkt=document.getElementById('pkt'), pktTxt=document.getElementById('pktTxt'), pktBox=document.getElementById('pktBox');
+const xbody=document.getElementById('xbody');
+let mode='static', busy=false, dynNext=0, patPort=4001;
+const dynHeld={}; const patMap={};
+const PUB=['203.0.113.5','203.0.113.6'];
+const HOSTS={A:{ip:'192.168.1.10',y:100,stat:'203.0.113.5'},B:{ip:'192.168.1.11',y:196,stat:'203.0.113.6'}};
+
+function nSay(tag,txt,exam){
+  document.getElementById('nTag').textContent=tag;
+  document.getElementById('nTxt').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('nExam').innerHTML=exam;
+  gsap.from('#viewLearn .infobar',{opacity:.6,duration:.3});
+}
+function addRow(il,ig){
+  if(xbody.dataset.empty!=='0'){xbody.innerHTML=''; xbody.dataset.empty='0';}
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${il}</td><td class="g">${ig}</td><td>${mode.toUpperCase()}</td>`;
+  xbody.appendChild(tr); gsap.from(tr,{opacity:0,x:-10,duration:.5});
+}
+function wires(seg){ // 0=A,1=B,2=outside,-1=none
+  document.getElementById('wA').style.stroke = seg===0?'#C9A227':'#3D5178';
+  document.getElementById('wB').style.stroke = seg===1?'#C9A227':'#3D5178';
+  document.getElementById('wO').style.stroke = seg===2?'#C9A227':'#3D5178';
+}
+function translateFor(h){
+  const H=HOSTS[h];
+  if(mode==='static'){ return {ig:H.stat, isNew:!H['seen_s'] && (H['seen_s']=true)}; }
+  if(mode==='dyn'){
+    if(dynHeld[h]) return {ig:dynHeld[h], isNew:false};
+    if(dynNext>=PUB.length) return null;
+    dynHeld[h]=PUB[dynNext++]; return {ig:dynHeld[h], isNew:true};
+  }
+  if(patMap[h]) return {ig:patMap[h], isNew:false};
+  patMap[h]='203.0.113.5:'+(patPort++); return {ig:patMap[h], isNew:true};
+}
+async function sendFrom(h){
+  if(busy)return; busy=true;
+  document.getElementById('sendA').disabled=true; document.getElementById('sendB').disabled=true;
+  const H=HOSTS[h];
+  const T=translateFor(h);
+  pktTxt.textContent='SRC '+H.ip; pktBox.style.fill='#C9A227';
+  gsap.set(pkt,{x:200,y:H.y,opacity:1,scale:1});
+  nSay('OUTBOUND // PRIVATE SIDE',
+    `PC-${h} sends a request to the web server. On the inside, the source address is its <span class="hl">inside local</span>: ${H.ip}. A private address like this is <span class="hl">not routable on the internet</span>: if it left unchanged, no reply could ever find its way back.`);
+  await new Promise(r=>{wires(h==='A'?0:1);
+    gsap.to(pkt,{x:455,y:142,duration:1.8,ease:'power1.inOut',onComplete:r});});
+  // rewrite at router
+  await new Promise(r=>{
+    gsap.timeline({onComplete:r})
+      .to(pkt,{scale:1.18,yoyo:true,repeat:1,duration:.26,transformOrigin:'center'})
+      .call(()=>{
+        pktTxt.textContent='SRC '+T.ig; pktBox.style.fill='#6EB5DC';
+        nSay('REWRITE AT THE EDGE',
+          `The router rewrites the source to the <span class="hl">inside global</span> address: <span class="hl">${T.ig}</span>${mode==='pat'?' (note the appended port: that is how PAT keeps sessions apart)':''}. ${T.isNew?'A new row lands in the translation table.':'The existing table entry is reused.'}`,
+          mode==='pat'?'Exam angle: PAT distinguishes sessions by PORT NUMBER.':mode==='dyn'?'Exam angle: dynamic NAT assigns pool addresses first come, first served, one per host.':'Exam angle: static entries exist even before traffic flows; dynamic entries appear only after.');
+        if(T.isNew)addRow(H.ip,T.ig);
+      })
+      .to({},{duration:.6});
+  });
+  await new Promise(r=>{wires(2);
+    gsap.to(pkt,{x:800,duration:1.6,ease:'power1.inOut',onComplete:r});});
+  // return trip
+  pktTxt.textContent='DST '+T.ig;
+  nSay('THE REPLY COMES BACK',
+    `The server replies to <span class="hl">${T.ig}</span>: it has never heard of ${H.ip}. At the edge, the router looks up the table${mode==='pat'?' (by port)':''} and rewrites the destination back to the inside local address.`);
+  await new Promise(r=>{gsap.to(pkt,{x:455,duration:1.6,ease:'power1.inOut',onComplete:r});});
+  await new Promise(r=>{
+    gsap.timeline({onComplete:r})
+      .to(pkt,{scale:1.18,yoyo:true,repeat:1,duration:.26,transformOrigin:'center'})
+      .call(()=>{pktTxt.textContent='DST '+H.ip; pktBox.style.fill='#C9A227';})
+      .to({},{duration:.4});
+  });
+  await new Promise(r=>{wires(h==='A'?0:1);
+    gsap.to(pkt,{x:200,y:H.y,duration:1.6,ease:'power1.inOut',onComplete:r});});
+  gsap.to(pkt,{opacity:0,duration:.3}); wires(-1);
+  nSay('ROUND TRIP COMPLETE',
+    `Delivered to PC-${h}. The translation table made the return trip possible: <span class="hl">that table IS the whole trick</span>. Send from the other PC, or switch modes and compare the tables.`);
+  busy=false;
+  document.getElementById('sendA').disabled=false; document.getElementById('sendB').disabled=false;
+}
+document.getElementById('sendA').onclick=()=>sendFrom('A');
+document.getElementById('sendB').onclick=()=>sendFrom('B');
+
+function natResetFn(msg){
+  busy=false; dynNext=0; patPort=4001;
+  delete dynHeld.A; delete dynHeld.B; delete patMap.A; delete patMap.B;
+  delete HOSTS.A.seen_s; delete HOSTS.B.seen_s;
+  gsap.killTweensOf(pkt); gsap.set(pkt,{opacity:0,scale:1}); wires(-1);
+  xbody.innerHTML='<tr><td colspan="3" style="color:#7C8DB0;">(empty: no traffic yet)</td></tr>'; xbody.dataset.empty='1';
+  document.getElementById('sendA').disabled=false; document.getElementById('sendB').disabled=false;
+  const pool=document.getElementById('poolLbl');
+  if(mode==='static'){pool.textContent='static: A⇒.5  B⇒.6';
+    if(msg)nSay('READY // STATIC NAT','Static NAT: a <span class="hl">one-to-one, manually configured</span> mapping. PC-A is permanently 203.0.113.5 to the world; PC-B is permanently 203.0.113.6. Press a SEND button and watch the rewrite at the edge.','Exam angle: a server that must be reachable FROM the internet always needs static NAT.');}
+  if(mode==='dyn'){pool.textContent='pool: 203.0.113.5 - .6';
+    if(msg)nSay('READY // DYNAMIC NAT','Dynamic NAT: a <span class="hl">pool of public addresses</span> handed out first come, first served, one per host, still one-to-one. Send from both PCs and watch each one claim a different pool address.','Exam angle: when the pool runs out, the next host’s traffic is dropped until an entry times out.');}
+  if(mode==='pat'){pool.textContent='overload: 203.0.113.5 only';
+    if(msg)nSay('READY // PAT (OVERLOAD)','PAT: <span class="hl">many hosts share ONE public address</span>, distinguished by port numbers. This is what your home router does, and what virtually every business runs. Send from both PCs and compare the table rows.','Exam angle: "overload" in a command or question always means PAT.');}
+}
+document.getElementById('natReset').onclick=()=>natResetFn(true);
+function setMode(m,btn){
+  if(busy)return;
+  mode=m;
+  ['mStatic','mDyn','mPat'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  btn.classList.add('on');
+  natResetFn(true);
+}
+document.getElementById('mStatic').onclick=e=>setMode('static',e.target);
+document.getElementById('mDyn').onclick=e=>setMode('dyn',e.target);
+document.getElementById('mPat').onclick=e=>setMode('pat',e.target);
+
+/* ================= 2. TERMS ================= */
+const TERMS={
+ il:{t:"INSIDE LOCAL",x:"The <span class='hl'>private address of an inside host</span>, as seen inside your network. In the theater above: 192.168.1.10. \"Inside\" = whose address it is. \"Local\" = the inside view of it.",
+     e:"Exam angle: decode the terms in two steps. First word = whose host (inside/outside). Second word = seen from where (local = inside view, global = internet view)."},
+ ig:{t:"INSIDE GLOBAL",x:"The <span class='hl'>public address that represents an inside host</span> to the outside world: 203.0.113.5 in the theater. This is the translated address, the one the web server actually sees.",
+     e:"Exam angle: \"the address of the inside host as seen from the internet\" = inside global. The most-tested term of the four."},
+ og:{t:"OUTSIDE GLOBAL",x:"The <span class='hl'>public address of an outside host</span> as assigned by its owner: the web server's real 198.51.100.7. Nothing about it is translated in our scenarios.",
+     e:"Exam angle: usually appears as the \"normal\" address in the table: the destination your inside hosts talk to."},
+ ol:{t:"OUTSIDE LOCAL",x:"How an <span class='hl'>outside host appears to the inside network</span>. In standard NAT deployments this is the <span class='hl'>same as outside global</span>: outside addresses are not translated. It differs only in rare double-NAT designs.",
+     e:"Exam angle: if a question offers outside local as the exotic answer, check whether outside addresses were translated at all. Usually they were not."}
+};
+document.querySelectorAll('.chip[data-t]').forEach(c=>{
+  c.onclick=()=>{
+    document.querySelectorAll('.chip[data-t]').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    const T=TERMS[c.dataset.t];
+    document.getElementById('tTag').textContent=T.t;
+    document.getElementById('tTxt').innerHTML=T.x;
+    document.getElementById('tExam').innerHTML=T.e;
+  };
+});
+
+/* ================= 3. TERMINOLOGY DRILL ================= */
+const TD_Q=[
+ {s:"192.168.1.10: the private address of PC-A as configured on the PC itself.",o:["Inside local","Inside global","Outside local","Outside global"],a:0,
+  e:"Inside host, seen from inside: inside local."},
+ {s:"203.0.113.5: the address the web server sees as the source of PC-A's traffic.",o:["Inside local","Inside global","Outside local","Outside global"],a:1,
+  e:"Inside host, seen from the internet: inside global. The translated address."},
+ {s:"198.51.100.7: the web server's own public address.",o:["Inside local","Inside global","Outside local","Outside global"],a:3,
+  e:"Outside host, seen from the internet: outside global."},
+ {s:"A mail server in your DMZ must be reachable from the internet at the same public address, always. Which NAT type?",o:["Static NAT","Dynamic NAT","PAT","No NAT needed"],a:0,
+  e:"Permanent, predictable, inbound-reachable: one-to-one static NAT."},
+ {s:"Three hundred employees browse the internet through one public address. Which NAT type is in use?",o:["Static NAT","Dynamic NAT","PAT","Outside NAT"],a:2,
+  e:"Many-to-one sharing = PAT (overload). Port numbers keep the sessions apart."},
+ {s:"The keyword at the end of the command ip nat inside source list 1 interface g0/1 ___ that turns the configuration into PAT.",o:["pool","overload","static","permit"],a:1,
+  e:"overload is the PAT keyword. See it in a command or a question, and the answer space collapses to PAT."}
+];
+let tdOrder=[], tdI=0, tdS=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function tdRound(){
+  if(tdI>=TD_Q.length){
+    document.getElementById('tdScen').textContent="Done.";
+    document.getElementById('tdOpts').innerHTML='';
+    const f=document.getElementById('tdFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${tdS} / 6 `+(tdS===6?"Vocabulary locked in.":tdS>=4?"Close. Re-read section 2 and retake.":"Back to section 2, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('tdStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=tdOrder[tdI];
+  document.getElementById('tdRound').textContent=tdI+1;
+  document.getElementById('tdScen').textContent=Q.s;
+  gsap.from('#tdScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('tdOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){tdS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#tdScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('tdScore').textContent=tdS;
+      document.getElementById('tdScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; tdI++; tdRound();},2100);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('tdStart').onclick=e=>{
+  tdOrder=shuffle([...TD_Q]); tdI=0; tdS=0;
+  document.getElementById('tdScore').textContent="0";
+  document.getElementById('tdFinal').style.display='none';
+  e.target.style.display='none'; tdRound();
+};
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"C",stem:"Why must a packet sourced from 192.168.1.10 be translated before reaching the internet?",
+  o:["Private addresses are too slow for WAN links","RFC 1918 private addresses are not routable on the internet","The packet is too large without translation","DNS cannot resolve private addresses"],a:1,
+  e:"192.168.0.0/16 is RFC 1918 private space: internet routers drop it, and no reply could return. NAT exists because of this."},
+ {t:"C",stem:"In NAT terminology, what is the inside global address?",
+  o:["The private address of an inside host","The public address representing an inside host to the outside world","The address of an outside host as seen internally","The router's loopback address"],a:1,
+  e:"Inside host (first word) seen from the internet (global): the translated public address. The most-tested NAT term."},
+ {t:"C",stem:"A technician runs show ip nat translations immediately after configuring dynamic NAT and sees an empty table. What does this indicate?",
+  o:["NAT is misconfigured","The pool is exhausted","Nothing is wrong: dynamic entries appear only after matching traffic flows","The ACL is applied backward"],a:2,
+  e:"Dynamic and PAT entries are created by traffic. An empty table before any traffic is normal. Static entries, by contrast, appear immediately."},
+ {t:"S",stem:"A company's web server must always be reachable from the internet at 203.0.113.10. Which NAT type should be configured?",
+  o:["Dynamic NAT","PAT","Static NAT","NAT overload"],a:2,
+  e:"Inbound reachability at a fixed address = one-to-one static NAT, configured manually and permanent."},
+ {t:"S",stem:"A dynamic NAT pool contains 4 public addresses and 6 inside hosts attempt simultaneous internet access. What happens to hosts 5 and 6?",
+  o:["They share addresses with hosts 1 and 2","Their traffic is dropped until a pool entry times out","They are translated using port numbers","They bypass NAT"],a:1,
+  e:"Dynamic NAT is still one-to-one. An exhausted pool means drops, not sharing. Sharing requires PAT."},
+ {t:"S",stem:"Which two interface commands define where translation happens on the edge router?",
+  o:["ip nat source and ip nat destination","ip nat inside and ip nat outside","ip nat local and ip nat global","ip nat lan and ip nat wan"],a:1,
+  e:"ip nat inside on the LAN-facing interface, ip nat outside on the internet-facing one. Reversed roles are a classic broken-NAT scenario."},
+ {t:"P",stem:"How does PAT allow hundreds of inside hosts to share a single public address?",
+  o:["By assigning each host a different MAC address","By tracking each session with a unique source port number","By rotating the public address hourly","By using a separate VLAN per host"],a:1,
+  e:"Each translation gets a unique port (203.0.113.5:4001, :4002...). The reply's destination port routes it back to the right host."},
+ {t:"P",stem:"Which keyword in a NAT configuration command indicates PAT?",
+  o:["pool","static","overload","permit"],a:2,
+  e:"overload = PAT. It appears at the end of the ip nat inside source command, and the exam expects instant recognition."},
+ {t:"P",stem:"An entry in the translation table reads 203.0.113.5:4232 mapped to 192.168.1.44:4232. What type of NAT produced it?",
+  o:["Static NAT","Dynamic NAT","PAT","Outside NAT"],a:2,
+  e:"Port numbers attached to the addresses are the PAT signature. Static and dynamic entries map address to address only."},
+ {t:"T",stem:"Inside users cannot reach the internet. show ip nat statistics reveals the inside interface is marked outside and vice versa. What is the fix?",
+  o:["Increase the pool size","Swap the ip nat inside and ip nat outside interface assignments","Remove the overload keyword","Clear the ARP cache"],a:1,
+  e:"Reversed interface roles mean the router translates in the wrong direction. Reassign inside and outside correctly: checklist item number one."}
+];
+const TOPICS={C:"CONCEPTS",S:"STATIC / DYNAMIC",P:"PAT",T:"TROUBLESHOOTING"};
+let qOrder=[], qi=0, qScore=0, per={C:[0,0],S:[0,0],P:[0,0],T:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdC').textContent=per.C[0]+"/"+per.C[1];
+  document.getElementById('bdS').textContent=per.S[0]+"/"+per.S[1];
+  document.getElementById('bdP').textContent=per.P[0]+"/"+per.P[1];
+  document.getElementById('bdT').textContent=per.T[0]+"/"+per.T[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on NAT. Take the graded 25-question Week 1 quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: run the theater in all three modes, finish the terminology drill at 6/6, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={C:[0,0],S:[0,0],P:[0,0],T:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={C:[0,0],S:[0,0],P:[0,0],T:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+natResetFn(false);
+</script>
+</body>
+</html>
