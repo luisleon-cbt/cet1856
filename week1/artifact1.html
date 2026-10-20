@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 1 &bull; Core Network Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.skyb{background:var(--sky); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .panel svg{width:100%; height:auto; display:block;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden; margin-left:auto;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12.5px; padding:8px 16px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  /* severity ladder */
+  .ladder{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:760px){.ladder{grid-template-columns:1fr;}}
+  .rung{display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; color:#fff; font-size:13.5px; border:none; width:100%; text-align:left;}
+  .rung:first-child{border-radius:10px 10px 0 0;} .rung:last-child{border-radius:0 0 10px 10px;}
+  .rung .n{font-family:'Chakra Petch',sans-serif; font-size:16px; width:20px;}
+  .rung.sel{outline:3px solid var(--gold); outline-offset:-3px; position:relative; z-index:2;}
+  .sv0{background:#7A1F1F;} .sv1{background:#8C2B21;} .sv2{background:#A2452A;} .sv3{background:#B5652F;}
+  .sv4{background:#C9A227; color:#1B2A4A;} .sv5{background:#6EB5DC; color:#1B2A4A;}
+  .sv6{background:#9CCDE8; color:#1B2A4A;} .sv7{background:#D9E2EC; color:#1B2A4A;}
+  /* stratum */
+  .strat{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:16px;}
+  .strat .row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .strat .chip{font-family:'IBM Plex Mono',monospace; font-size:11px; background:#22345C; color:var(--sky); border-radius:14px; padding:4px 12px;}
+  .strat .bar{flex:1; height:10px; border-radius:6px; background:#22345C; overflow:hidden;}
+  .strat .bar div{height:100%; background:linear-gradient(90deg,var(--gold),var(--sky));}
+  /* drill */
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  /* test prep */
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 1 // ARTIFACT 1 of 2</div>
+    <h1>Core Network Services</h1>
+    <p>A network without services is just expensive cabling. This week you deploy the four every enterprise runs on: DHCP hands out addresses, DNS resolves names, NTP keeps everyone on the same clock, and syslog tells you what went wrong. Learn them live, then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. DORA theater</h2>
+    <div class="sub">A client with no IP address negotiates one in four messages. Step through the exchange, then switch to ACROSS A ROUTER mode and watch why ip helper-address exists.</div>
+    <div class="panel">
+      <svg viewBox="0 0 1000 250" xmlns="http://www.w3.org/2000/svg" aria-label="DHCP exchange between client and server">
+        <!-- client -->
+        <g><rect x="58" y="70" width="66" height="44" rx="6" fill="#6EB5DC"/><rect x="67" y="78" width="48" height="28" rx="2" fill="#1B2A4A"/>
+          <text x="91" y="138" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:14px;" fill="#fff">NEW CLIENT</text>
+          <text x="91" y="154" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#9CCDE8" id="cliIp">IP: 0.0.0.0</text></g>
+        <!-- router (relay mode only) -->
+        <g id="relayRtr" opacity="0.18">
+          <circle cx="500" cy="92" r="27" fill="#C9A227"/>
+          <path d="M487 92 h26 M500 79 v26 M491 83 l18 18 M509 83 l-18 18" stroke="#1B2A4A" stroke-width="2.5"/>
+          <text x="500" y="140" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">Router</text>
+          <text x="500" y="156" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8" id="relayLbl">(not in the path)</text>
+        </g>
+        <!-- server -->
+        <g><rect x="876" y="58" width="52" height="66" rx="7" fill="#6EB5DC"/><rect x="884" y="67" width="36" height="10" rx="2" fill="#1B2A4A"/><rect x="884" y="83" width="36" height="10" rx="2" fill="#1B2A4A"/><rect x="884" y="99" width="36" height="10" rx="2" fill="#1B2A4A"/>
+          <text x="902" y="140" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:14px;" fill="#fff">DHCP SERVER</text>
+          <text x="902" y="156" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#9CCDE8">UDP 67</text></g>
+        <line x1="146" y1="92" x2="856" y2="92" stroke="#3D5178" stroke-width="2" stroke-dasharray="4 6"/>
+        <g id="dMsg" opacity="0">
+          <rect id="dBox" x="-70" y="-17" width="140" height="34" rx="17" fill="#C9A227"/>
+          <text id="dTxt" x="0" y="5" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;" fill="#1B2A4A">DISCOVER</text>
+        </g>
+        <g id="dLog"></g>
+      </svg>
+      <div class="infobar"><span class="tag" id="dTag">READY</span><span id="dTxtBar">The client boots with <span class="hl">no IP address at all</span> (0.0.0.0). It cannot send unicast traffic, so the conversation must start with a broadcast. Press STEP to begin.</span><span class="exam" id="dExam">Exam angle: the DORA order (Discover, Offer, Request, Acknowledge) and which messages are broadcast are guaranteed questions.</span></div>
+      <div class="btns">
+        <button class="btn gold" id="dStep">STEP &#9654;</button>
+        <button class="btn ghost" id="dReset">RESET &#8634;</button>
+        <div class="mode">
+          <button id="mSame" class="on">SAME LAN</button>
+          <button id="mRelay">ACROSS A ROUTER</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>2. The operations wall: syslog and NTP</h2>
+    <div class="sub">Click every syslog severity rung on the left. On the right, see why NTP stratum exists: logs are useless if the clocks disagree.</div>
+    <div class="panel">
+      <div class="ladder">
+        <div>
+          <button class="rung sv0" data-s="0"><span class="n">0</span><span><strong>Emergency</strong> &nbsp;system unusable</span></button>
+          <button class="rung sv1" data-s="1"><span class="n">1</span><span><strong>Alert</strong> &nbsp;act immediately</span></button>
+          <button class="rung sv2" data-s="2"><span class="n">2</span><span><strong>Critical</strong> &nbsp;critical condition</span></button>
+          <button class="rung sv3" data-s="3"><span class="n">3</span><span><strong>Error</strong> &nbsp;error condition</span></button>
+          <button class="rung sv4" data-s="4"><span class="n">4</span><span><strong>Warning</strong> &nbsp;warning condition</span></button>
+          <button class="rung sv5" data-s="5"><span class="n">5</span><span><strong>Notification</strong> &nbsp;normal but significant</span></button>
+          <button class="rung sv6" data-s="6"><span class="n">6</span><span><strong>Informational</strong> &nbsp;info message</span></button>
+          <button class="rung sv7" data-s="7"><span class="n">7</span><span><strong>Debugging</strong> &nbsp;debug output</span></button>
+        </div>
+        <div class="strat">
+          <div style="font-family:'Chakra Petch',sans-serif; color:#C9A227; font-size:14px; margin-bottom:12px;">NTP STRATUM: distance from the reference clock</div>
+          <div class="row"><span class="chip">Stratum 0</span><div class="bar"><div style="width:100%"></div></div></div>
+          <div style="color:#9CCDE8; font-size:12px; margin:-4px 0 10px 4px; font-family:'IBM Plex Mono',monospace;">atomic clock / GPS (not on the network)</div>
+          <div class="row"><span class="chip">Stratum 1</span><div class="bar"><div style="width:78%"></div></div></div>
+          <div style="color:#9CCDE8; font-size:12px; margin:-4px 0 10px 4px; font-family:'IBM Plex Mono',monospace;">server directly attached to stratum 0</div>
+          <div class="row"><span class="chip">Stratum 2</span><div class="bar"><div style="width:56%"></div></div></div>
+          <div style="color:#9CCDE8; font-size:12px; margin:-4px 0 10px 4px; font-family:'IBM Plex Mono',monospace;">syncs from stratum 1 (your routers usually live here)</div>
+          <div class="row"><span class="chip">Stratum 3+</span><div class="bar"><div style="width:34%"></div></div></div>
+          <div style="color:#9CCDE8; font-size:12px; margin:-4px 0 2px 4px; font-family:'IBM Plex Mono',monospace;">lower number = closer to the truth = more accurate</div>
+        </div>
+      </div>
+      <div class="infobar"><span class="tag" id="sTag">CLICK A SEVERITY</span><span id="sTxt">The mnemonic, 0 to 7: <span class="hl">E</span>very <span class="hl">A</span>wesome <span class="hl">C</span>isco <span class="hl">E</span>ngineer <span class="hl">W</span>ill <span class="hl">N</span>eed <span class="hl">I</span>ce cream <span class="hl">D</span>aily. Lower number = worse news.</span><span class="exam" id="sExam">Exam angle: "logging trap 4" means severities 0 THROUGH 4 are sent: the level and everything worse.</span></div>
+    </div>
+
+    <h2>3. Name that service</h2>
+    <div class="sub">Eight help-desk scenarios. Identify which service is involved. This is exactly how the exam disguises these topics.</div>
+    <div class="drill">
+      <div class="scen" id="svScen">Eight rounds. The scenario names a symptom or a job; you name the service.</div>
+      <div class="opts" id="svOpts"></div>
+      <div class="meta"><span>Round <b id="svRound">0</b>/8</span><span>Score <b id="svScore">0</b></span></div>
+      <button class="btn gold" id="svStart" style="margin-top:16px;">START</button>
+      <div class="final" id="svFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">Services questions follow four reliable patterns. Learn the pattern, bank the points.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: the DORA sequence, with the broadcast detail</h3>
+      <p>Order: <code>Discover &#8594; Offer &#8594; Request &#8594; Acknowledge</code>. Discover and Request come from the client (broadcast, because it has no usable address yet); Offer and Acknowledge come from the server. Ports: <code>UDP 67 server, UDP 68 client</code>.</p>
+      <span class="trap">Trap: "DORA" answers scrambled to DRAO or DOAR are always among the options. Say the acronym before you look.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: the relay question</h3>
+      <p>DHCP Discover is a broadcast, and <strong>routers do not forward broadcasts</strong>. The moment a scenario puts the client and the DHCP server on different networks, the answer is <code>ip helper-address</code> on the router interface facing the clients: it converts the broadcast to unicast aimed at the server.</p>
+      <span class="trap">Trap: the helper address goes on the interface closest to the CLIENTS, not the server.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: syslog severity logic</h3>
+      <p>0 to 7, lower is worse: <code>Emergency, Alert, Critical, Error, Warning, Notification, Informational, Debugging</code>. Configuring a trap level sends that level <strong>and everything more severe</strong>: level 4 sends 0 through 4.</p>
+      <span class="trap">Trap: "which levels are sent at logging trap 3?" means 0, 1, 2, AND 3, never just 3.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: NTP stratum and why time matters</h3>
+      <p>Stratum counts hops from the reference clock: <strong>lower stratum = more authoritative</strong>. A device syncing from a stratum 2 server becomes stratum 3. The "why" answer: accurate time makes <strong>syslog timestamps and certificates trustworthy</strong>: without it, you cannot correlate events across devices.</p>
+      <span class="trap">Trap: stratum 0 is the clock itself (GPS, atomic); it is not a server you point ntp server at.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. (Your graded 25-question quiz is in Canvas after Artifact 2.)</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering DHCP, syslog, NTP, and the supporting services. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">DHCP<b id="bdD">0/0</b></div>
+          <div class="cell">Syslog<b id="bdS">0/0</b></div>
+          <div class="cell">NTP<b id="bdN">0/0</b></div>
+          <div class="cell">Other services<b id="bdO">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you deploy every one of these services in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W1S1</span> and <span style="font-family:'IBM Plex Mono',monospace;">W1S2</span>: DHCP pools and relay, NTP hierarchy, syslog analysis, and DNS. Then continue to Artifact 2 (NAT &amp; PAT).</div>
+</div>
+
+<script>
+/* ================= VIEWS ================= */
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+/* ================= 1. DORA THEATER ================= */
+const dMsg=document.getElementById('dMsg'), dBox=document.getElementById('dBox'), dTxt=document.getElementById('dTxt');
+const dLog=document.getElementById('dLog');
+let relay=false, dStepN=0, dBusy=false, dLogY=0;
+const CLI_X=160, SRV_X=845, MID_X=500, MSG_Y=92;
+
+function dSay(tag,txt,exam){
+  document.getElementById('dTag').textContent=tag;
+  document.getElementById('dTxtBar').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('dExam').innerHTML=exam;
+  gsap.from('#viewLearn .infobar',{opacity:.6,duration:.3});
+}
+function dAddLog(text,color,dir){
+  const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', dir==='r'? 210:790);
+  t.setAttribute('text-anchor', dir==='r'?'start':'end');
+  t.setAttribute('y', 190+dLogY*16);
+  t.style.fontFamily="'IBM Plex Mono',monospace"; t.style.fontSize='10.5px'; t.style.fill=color;
+  t.textContent=(dir==='r'?'→ ':'← ')+text;
+  dLog.appendChild(t); gsap.from(t,{opacity:0,duration:.4}); dLogY=(dLogY+1)%4;
+}
+function dSend(text,color,dir,bcast){
+  return new Promise(res=>{
+    dBusy=true; document.getElementById('dStep').disabled=true;
+    dTxt.textContent=text; dBox.style.fill=color;
+    const fromX = dir==='r'? CLI_X : SRV_X;
+    const toX   = dir==='r'? SRV_X-0 : CLI_X;
+    gsap.set(dMsg,{x:fromX,y:MSG_Y,opacity:1,scale:1});
+    const tl=gsap.timeline({onComplete:()=>{
+      gsap.to(dMsg,{opacity:0,duration:.15});
+      dAddLog(text+(bcast?' (broadcast)':' (unicast)'),color,dir);
+      dBusy=false; document.getElementById('dStep').disabled=false; res();
+    }});
+    if(relay){
+      // pause at the router: relay rewrites broadcast to unicast
+      tl.to(dMsg,{x:MID_X,duration:1.1,ease:'power1.inOut'});
+      tl.to(dMsg,{scale:1.18,yoyo:true,repeat:1,duration:.22,transformOrigin:'center'});
+      tl.to(dMsg,{x:toX,duration:1.1,ease:'power1.inOut'});
+    }else{
+      tl.to(dMsg,{x:toX,duration:1.6,ease:'power1.inOut'});
+    }
+    if(bcast){gsap.fromTo(dBox,{attr:{rx:17}},{duration:.1});}
+  });
+}
+const DORA=[
+ async ()=>{ dSay('STEP 1 of 4 // DISCOVER',
+   'The client <span class="hl">broadcasts a DHCPDISCOVER</span>: "is there a DHCP server out there?" It must broadcast: with 0.0.0.0 it cannot address anyone directly.'+(relay?' Watch the router: broadcasts normally DIE here, but <span class="hl">ip helper-address</span> relays it as unicast to the server.':''),
+   relay?'Exam angle: ip helper-address goes on the interface facing the CLIENTS.':'Exam angle: Discover and Request are the client’s broadcasts.');
+   await dSend('DISCOVER','#C9A227','r',true); },
+ async ()=>{ dSay('STEP 2 of 4 // OFFER',
+   'The server reserves an address from its pool and answers with a <span class="hl">DHCPOFFER</span>: "how about 192.168.1.47, with this mask, gateway, DNS, and lease?"');
+   await dSend('OFFER','#6EB5DC','l',false); },
+ async ()=>{ dSay('STEP 3 of 4 // REQUEST',
+   'The client <span class="hl">broadcasts a DHCPREQUEST</span>: "I accept 192.168.1.47." Broadcast again, so any OTHER servers that offered know their offer was declined.');
+   await dSend('REQUEST','#C9A227','r',true); },
+ async ()=>{ dSay('STEP 4 of 4 // ACKNOWLEDGE',
+   'The server finalizes the lease with a <span class="hl">DHCPACK</span>. The client configures itself and can finally talk.',
+   'Exam angle: the full options list arrives here: address, mask, gateway, DNS, lease time.');
+   await dSend('ACK','#6EB5DC','l',false);
+   document.getElementById('cliIp').textContent='IP: 192.168.1.47 ✓';
+   gsap.fromTo('#cliIp',{opacity:0},{opacity:1,duration:.6});
+   dSay('COMPLETE','<span class="hl">D-O-R-A.</span> Four messages and the client has a full identity. Switch modes and run it again'+(relay?' on the same LAN.':' across a router.'),''); }
+];
+document.getElementById('dStep').onclick=async()=>{
+  if(dBusy)return;
+  if(dStepN<DORA.length){const f=DORA[dStepN]; dStepN++; await f();
+    if(dStepN>=DORA.length)document.getElementById('dStep').disabled=true;}
+};
+function dResetFn(){
+  dStepN=0; dBusy=false; dLogY=0; dLog.innerHTML='';
+  gsap.set(dMsg,{opacity:0});
+  document.getElementById('cliIp').textContent='IP: 0.0.0.0';
+  document.getElementById('dStep').disabled=false;
+  gsap.to('#relayRtr',{opacity:relay?1:0.18,duration:.4});
+  document.getElementById('relayLbl').textContent=relay?'ip helper-address 10.0.2.9':'(not in the path)';
+  dSay('READY', relay?
+    'Now the client and the DHCP server are on <span class="hl">different networks</span>. Broadcasts cannot cross the router, so the router is configured with <span class="hl">ip helper-address</span>. Press STEP and watch it relay.':
+    'The client boots with <span class="hl">no IP address at all</span> (0.0.0.0). It cannot send unicast traffic, so the conversation must start with a broadcast. Press STEP to begin.',
+    relay?'Exam angle: client and server on different networks = ip helper-address, every time.':'Exam angle: the DORA order and which messages are broadcast are guaranteed questions.');
+}
+document.getElementById('dReset').onclick=dResetFn;
+document.getElementById('mSame').onclick=()=>{relay=false; modeUI(); dResetFn();};
+document.getElementById('mRelay').onclick=()=>{relay=true; modeUI(); dResetFn();};
+function modeUI(){
+  document.getElementById('mSame').classList.toggle('on',!relay);
+  document.getElementById('mRelay').classList.toggle('on',relay);
+}
+
+/* ================= 2. SEVERITY LADDER ================= */
+const SEV={
+ 0:{t:"0 // EMERGENCY",x:"The system is <span class='hl'>unusable</span>. Example: a device failing to boot. You will rarely see this one, and never want to.",e:"Exam angle: severity 0 is the worst. Lower number = worse news, always."},
+ 1:{t:"1 // ALERT",x:"Action needed <span class='hl'>immediately</span>. Example: a temperature threshold that will shut the device down.",e:"Exam angle: 0 and 1 both read as 'drop everything'; the exam tests the ORDER, not the drama."},
+ 2:{t:"2 // CRITICAL",x:"A critical condition. Example: a hardware component failing.",e:"Exam angle: 'Every Awesome Cisco...' : C is the third word, severity 2."},
+ 3:{t:"3 // ERROR",x:"An error condition. Example: an interface going down unexpectedly carries severity 3.",e:"Exam angle: the famous %LINK-3-UPDOWN message: the 3 in the middle IS the severity."},
+ 4:{t:"4 // WARNING",x:"A warning. Something is off but still working. <span class='hl'>logging trap 4</span> sends severities 0 through 4 to the syslog server.",e:"Exam angle: a trap level always includes everything MORE severe than itself."},
+ 5:{t:"5 // NOTIFICATION",x:"Normal but significant. Example: a line protocol state change, or someone entering configuration mode.",e:"Exam angle: %SYS-5-CONFIG_I (someone configured the device) is the classic severity 5 example."},
+ 6:{t:"6 // INFORMATIONAL",x:"Routine information messages. Useful for auditing, noisy for alerting.",e:"Exam angle: 6 = informational, 7 = debugging. The exam loves swapping these two."},
+ 7:{t:"7 // DEBUGGING",x:"Debug output: the firehose. Only enable when actively troubleshooting, and <span class='hl'>turn it off after</span>: debug output can overwhelm a device.",e:"Exam angle: 'logging trap debugging' sends EVERYTHING (0 through 7)."}
+};
+document.querySelectorAll('.rung').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.rung').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    const S=SEV[b.dataset.s];
+    document.getElementById('sTag').textContent=S.t;
+    document.getElementById('sTxt').innerHTML=S.x;
+    document.getElementById('sExam').innerHTML=S.e;
+  };
+});
+
+/* ================= 3. SERVICE DRILL ================= */
+const SV_OPTS=["DHCP","DNS","NTP","Syslog","FTP","TFTP"];
+const SV_Q=[
+ {s:"A user's PC shows the address 169.254.33.12 and cannot reach anything. Which service failed to respond?",a:"DHCP",
+  e:"169.254.x.x is APIPA: the self-assigned fallback when no DHCP server answers. Instant DHCP diagnosis on the exam."},
+ {s:"Users can ping 142.250.65.78 but cannot reach google.com by name. Which service is broken?",a:"DNS",
+  e:"IP works, name fails: name resolution is down. The ping-by-IP-but-not-by-name pattern always means DNS."},
+ {s:"Log timestamps across your routers disagree by hours, making an incident impossible to reconstruct. Which service was never configured?",a:"NTP",
+  e:"Clock synchronization. Without NTP, correlating syslog events across devices is guesswork."},
+ {s:"You need every %LINK and %SYS message from all 12 switches collected on one central server for review. Which service does this?",a:"Syslog",
+  e:"Centralized event logging is syslog's whole job (UDP 514)."},
+ {s:"A router must back up its configuration to a server with no login prompt and minimal overhead, inside the protected LAN. Which service fits?",a:"TFTP",
+  e:"Trivial FTP: no authentication, UDP 69, the standard for config and IOS image transfers in labs."},
+ {s:"A user must upload a large file to a server using a username and password over a control and a data channel. Which service is in use?",a:"FTP",
+  e:"Authenticated file transfer over TCP 20/21: control and data channels are the FTP tell."},
+ {s:"A branch router needs to hand out addresses, gateways, and DNS settings to 40 PCs automatically. Which service do you configure on it?",a:"DHCP",
+  e:"Router-based DHCP server with a pool, exclusions, and options: your W1S1 lab."},
+ {s:"Certificates on your devices are failing validation because the device clocks drifted into the past. Which service prevents this?",a:"NTP",
+  e:"Certificate validity windows depend on correct time. Time drift breaking certificates is a favorite 'why NTP matters' question."}
+];
+let svOrder=[], svI=0, svS=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function svRound(){
+  if(svI>=SV_Q.length){
+    document.getElementById('svScen').textContent="Done.";
+    document.getElementById('svOpts').innerHTML='';
+    const f=document.getElementById('svFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${svS} / 8 `+(svS===8?"You read symptoms like a pro.":svS>=6?"Solid. Re-run the ones you missed.":"Re-read sections 1 and 2, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('svStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=svOrder[svI];
+  document.getElementById('svRound').textContent=svI+1;
+  document.getElementById('svScen').textContent=Q.s;
+  gsap.from('#svScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('svOpts'); box.innerHTML='';
+  SV_OPTS.forEach(o=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(o===Q.a){svS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); [...box.children].find(x=>x.textContent===Q.a).classList.add('correct');
+        gsap.fromTo('#svScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('svScore').textContent=svS;
+      document.getElementById('svScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; svI++; svRound();},2300);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('svStart').onclick=e=>{
+  svOrder=shuffle([...SV_Q]); svI=0; svS=0;
+  document.getElementById('svScore').textContent="0";
+  document.getElementById('svFinal').style.display='none';
+  e.target.style.display='none'; svRound();
+};
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"D",stem:"What is the correct order of messages in a successful DHCP lease negotiation?",
+  o:["Offer, Discover, Request, Acknowledge","Discover, Offer, Request, Acknowledge","Discover, Request, Offer, Acknowledge","Request, Offer, Discover, Acknowledge"],a:1,
+  e:"DORA: Discover, Offer, Request, Acknowledge. The scrambled versions are always among the wrong options."},
+ {t:"D",stem:"Which two DHCP messages are sent as broadcasts by the client?",
+  o:["Offer and Acknowledge","Discover and Offer","Discover and Request","Request and Acknowledge"],a:2,
+  e:"The client broadcasts both of its messages: Discover (it has no address) and Request (so other offering servers hear the decline)."},
+ {t:"D",stem:"PC clients on VLAN 10 cannot obtain addresses from the DHCP server located on a different network. Which command on the router solves this, and where?",
+  o:["ip helper-address on the interface facing the server","ip helper-address on the interface facing the clients","ip dhcp relay on the server","service dhcp on the switch"],a:1,
+  e:"Broadcasts die at the router, so the client-facing interface gets ip helper-address pointing at the server. Interface placement is the trap."},
+ {t:"D",stem:"A workstation configured for DHCP shows the address 169.254.80.5. What does this indicate?",
+  o:["The lease was renewed successfully","The DHCP server assigned a public address","No DHCP server responded and APIPA self-assigned","The default gateway is misconfigured"],a:2,
+  e:"169.254.0.0/16 is APIPA: the client's fallback when DORA never completes. It signals a DHCP failure instantly."},
+ {t:"S",stem:"A router is configured with logging trap 4. Which severity levels are sent to the syslog server?",
+  o:["Only level 4","Levels 4 through 7","Levels 0 through 4","Levels 0 through 7"],a:2,
+  e:"A trap level sends that level and everything more severe: 0, 1, 2, 3, and 4."},
+ {t:"S",stem:"In the message %LINK-3-UPDOWN: Interface GigabitEthernet0/1, changed state to down, what does the 3 represent?",
+  o:["The interface number","The syslog severity (Error)","The VLAN","The facility code position"],a:1,
+  e:"The number in the middle of a syslog message is its severity. 3 = Error, which fits an unexpected interface drop."},
+ {t:"S",stem:"Which syslog severity level produces the most output and should be disabled after troubleshooting?",
+  o:["0 Emergency","3 Error","5 Notification","7 Debugging"],a:3,
+  e:"7 (debugging) is the firehose. Leaving it on can overwhelm the device and the log server."},
+ {t:"N",stem:"A router synchronizes its clock from an NTP server operating at stratum 2. What stratum does the router advertise?",
+  o:["Stratum 1","Stratum 2","Stratum 3","Stratum 0"],a:2,
+  e:"Each hop from the reference adds one: syncing from stratum 2 makes you stratum 3. Lower = more authoritative."},
+ {t:"N",stem:"What is the PRIMARY operational reason to deploy NTP across all network devices?",
+  o:["It encrypts management traffic","It accelerates routing convergence","It makes log timestamps consistent so events can be correlated","It assigns IP addresses automatically"],a:2,
+  e:"Consistent time is what makes syslog forensics (and certificate validation) possible. This 'why' phrasing is how the exam asks it."},
+ {t:"O",stem:"A network technician needs to copy a router's configuration to a server quickly, with no authentication, inside the lab network. Which protocol is the standard choice?",
+  o:["FTP","TFTP","SFTP","HTTP"],a:1,
+  e:"TFTP (UDP 69): no login, minimal overhead, the standard for config and image transfers in controlled environments."}
+];
+const TOPICS={D:"DHCP",S:"SYSLOG",N:"NTP",O:"OTHER SERVICES"};
+let qOrder=[], qi=0, qScore=0, per={D:[0,0],S:[0,0],N:[0,0],O:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdD').textContent=per.D[0]+"/"+per.D[1];
+  document.getElementById('bdS').textContent=per.S[0]+"/"+per.S[1];
+  document.getElementById('bdN').textContent=per.N[0]+"/"+per.N[1];
+  document.getElementById('bdO').textContent=per.O[0]+"/"+per.O[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on services. Move to Artifact 2 (NAT &amp; PAT), then take the graded quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: run DORA in both modes, click every severity rung, finish the service drill at 8/8, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={D:[0,0],S:[0,0],N:[0,0],O:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={D:[0,0],S:[0,0],N:[0,0],O:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>
