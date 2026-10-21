@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 4 &bull; CCNA Exam Readiness</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:740px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:var(--navy); border:2px solid var(--line);}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:14px 18px; color:#fff; font-size:14px; line-height:1.7; margin-top:14px; min-height:150px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .infobar .where{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .view{display:none;} .view.on{display:block;}
+  /* domain map */
+  .dom{display:flex; align-items:center; gap:14px; background:#0F1B33; border:2px solid #3D5178; border-radius:10px; padding:10px 14px; margin-bottom:8px; cursor:pointer; color:#fff; width:100%; text-align:left; font-family:'IBM Plex Sans',sans-serif;}
+  .dom:hover{border-color:var(--sky);}
+  .dom.on{border-color:var(--gold);}
+  .dom .num{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:16px; width:34px;}
+  .dom .nm{width:230px; font-weight:600; font-size:14px;}
+  .dom .bar{flex:1; height:14px; background:#22345C; border-radius:7px; overflow:hidden;}
+  .dom .bar div{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:7px;}
+  .dom .pct{font-family:'IBM Plex Mono',monospace; font-size:13px; width:42px; text-align:right; color:#9CCDE8;}
+  @media(max-width:700px){.dom .nm{width:140px; font-size:12.5px;}}
+  /* strategy cards */
+  .strat{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  @media(max-width:760px){.strat{grid-template-columns:1fr;}}
+  .scard{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:14px 18px;}
+  .scard h3{font-family:'Chakra Petch',sans-serif; font-size:15.5px; margin-bottom:5px;}
+  .scard p{font-size:13.5px; line-height:1.6; color:var(--muted);}
+  /* exam */
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .topbar{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted);}
+  .timer{font-family:'Chakra Petch',sans-serif; font-size:22px; color:var(--navy);}
+  .timer.low{color:var(--bad);}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700; margin-top:10px;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.sel{border-color:var(--gold); background:#FFF8E7;}
+  .progress{height:8px; background:var(--bg); border-radius:5px; overflow:hidden; margin-top:12px;}
+  .progress div{height:100%; width:0; background:var(--sky);}
+  .results{display:none; text-align:left;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:40px; color:var(--navy); text-align:center;}
+  .verdict{text-align:center; font-family:'Chakra Petch',sans-serif; font-size:18px; margin-top:4px;}
+  .rbars{margin-top:20px;}
+  .rrow{display:flex; align-items:center; gap:12px; margin-bottom:9px; font-size:13.5px;}
+  .rrow .nm{width:240px; font-weight:600;}
+  .rrow .bar{flex:1; height:16px; background:var(--bg); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .rrow .bar div{height:100%; width:0; border-radius:8px;}
+  .rrow .v{width:60px; text-align:right; font-family:'IBM Plex Mono',monospace;}
+  @media(max-width:700px){.rrow .nm{width:130px; font-size:12px;}}
+  .plan{margin-top:18px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:14px 18px; font-size:14px; line-height:1.7;}
+  .review{margin-top:18px;}
+  .rv{border-bottom:1px solid var(--line); padding:10px 0; font-size:13.5px; line-height:1.55;}
+  .rv .ok{color:var(--ok); font-weight:700;} .rv .no{color:var(--bad); font-weight:700;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 4 // ARTIFACT 2 of 2 // SEQUENCE CAPSTONE</div>
+    <h1>CCNA Exam Readiness</h1>
+    <p>Four courses, six exam domains, one question: are you ready to schedule? Study the readiness map to see where every domain lives in the sequence, learn the exam-day strategies, then take the timed practice exam. It scores you the way the real exam weighs the domains and writes your study plan.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabMap">READINESS MAP</button>
+      <button class="tab" id="tabExam">PRACTICE EXAM</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== MAP -->
+  <div class="view on" id="viewMap">
+
+    <h2>1. The six domains and their weights</h2>
+    <div class="sub">Bar length shows each domain's share of the CCNA 200-301 exam. Click a domain to see where you learned it in this sequence and the must-know facts.</div>
+    <div class="panel">
+      <div id="domList"></div>
+      <div class="infobar"><span class="tag" id="dTag">CLICK A DOMAIN</span><span id="dTxt">IP Connectivity carries the most weight at 25 percent, and Network Fundamentals plus Network Access together are another 40 percent. Those three domains came mostly from the first three courses: they deserve the most review time.</span><span class="where" id="dWhere"></span></div>
+    </div>
+
+    <h2>2. Exam-day strategy</h2>
+    <div class="sub">Knowledge gets you to the door; strategy gets you through it.</div>
+    <div class="strat">
+      <div class="scard"><h3>Read the last line first</h3><p>The final sentence of a long question holds what is actually being asked. Read it first, then read the scenario hunting only for what that line needs.</p></div>
+      <div class="scard"><h3>There is no going back</h3><p>On Cisco exams you cannot return to a previous question. Commit to each answer before moving on, and never leave one blank: an unanswered question earns nothing.</p></div>
+      <div class="scard"><h3>Eliminate before you choose</h3><p>Most questions contain two answers that are clearly wrong. Remove them first; the planted trap is usually one of the two survivors. The trap lines in every Test Prep tab of this sequence were training for this moment.</p></div>
+      <div class="scard"><h3>Simulations: verify, do not assume</h3><p>In hands-on items, configure, then prove it with the right show command before moving on. Treat it exactly like your Packet Tracer labs: the verification checklist is part of the answer.</p></div>
+      <div class="scard"><h3>Budget your clock</h3><p>Plan roughly a minute per standard question so the simulations get the extra time they need. If a question stalls you, choose your best answer and move: one question is never worth five.</p></div>
+      <div class="scard"><h3>Confirm the details first</h3><p>Exam length, question count, price, and the current blueprint version can change. Check them on Cisco's official CCNA page before you schedule.</p></div>
+    </div>
+
+    <h2>3. Ready?</h2>
+    <div class="sub">Switch to the PRACTICE EXAM tab when you can give yourself 45 uninterrupted minutes.</div>
+    <button class="btn gold" id="goExam">GO TO THE PRACTICE EXAM &#9654;</button>
+  </div>
+
+  <!-- ==================================================== EXAM -->
+  <div class="view" id="viewExam">
+    <h2>Timed practice exam</h2>
+    <div class="sub">30 questions across all six domains, shuffled, 45 minutes. Like the real exam there is no going back and no feedback until the end. Your result is weighted by the official domain percentages.</div>
+
+    <div class="exam" id="examBox">
+      <div id="intro" style="text-align:center;">
+        <div style="font-family:'Chakra Petch',sans-serif; font-size:20px;">30 questions &bull; 45 minutes &bull; no going back</div>
+        <div style="color:var(--muted); font-size:14px; margin-top:8px; line-height:1.6;">Select an answer, then press CONFIRM to lock it in. When the clock reaches zero, unanswered questions count as incorrect.</div>
+        <button class="btn gold" id="startExam" style="margin-top:18px;">START THE EXAM</button>
+      </div>
+      <div id="qArea" style="display:none;">
+        <div class="topbar"><span id="qCount">QUESTION 1 of 30</span><span class="timer" id="timer">45:00</span></div>
+        <div class="progress"><div id="prog"></div></div>
+        <div class="qtag" id="qDomain"></div>
+        <div class="stem" id="qStem"></div>
+        <div class="qopts" id="qOpts"></div>
+        <button class="btn gold" id="confirm" style="margin-top:16px;" disabled>CONFIRM &#9654;</button>
+      </div>
+      <div class="results" id="results">
+        <div class="bigscore" id="rWeighted">0%</div>
+        <div class="verdict" id="rVerdict"></div>
+        <div style="text-align:center; color:var(--muted); font-size:13.5px; margin-top:4px;" id="rRaw"></div>
+        <div class="rbars" id="rBars"></div>
+        <div class="plan" id="rPlan"></div>
+        <div style="text-align:center; margin-top:16px;">
+          <button class="btn ghost" id="showReview">REVIEW MY ANSWERS</button>
+          <button class="btn gold" id="retake">RETAKE (new order) &#8634;</button>
+        </div>
+        <div class="review" id="review" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>Finish the course:</strong> complete the integrated capstone lab (<span style="font-family:'IBM Plex Mono',monospace;">CET1856-W4S15</span>), then take the graded final quiz in Canvas. Bring this exam's per-domain breakdown to your instructor to plan your CCNA exam date.</div>
+</div>
+
+<script>
+const vM=document.getElementById('viewMap'), vE=document.getElementById('viewExam');
+function show(view){
+  [vM,vE].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabMap').classList.toggle('on',view===vM);
+  document.getElementById('tabExam').classList.toggle('on',view===vE);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabMap').onclick=()=>show(vM);
+document.getElementById('tabExam').onclick=()=>show(vE);
+document.getElementById('goExam').onclick=()=>{show(vE); window.scrollTo({top:0,behavior:'smooth'});};
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ================= DOMAIN MAP ================= */
+const DOM={
+ 1:{n:"Network Fundamentals",w:20,
+   x:"Devices and their roles, cabling, the OSI and TCP/IP models, TCP vs UDP, <span class='hl'>IPv4 subnetting</span>, IPv6 addressing, and switching concepts. Must-knows: subnet math at speed, the PDU ladder, IPv6 address types, and why a frame to a remote host is addressed to the gateway.",
+   where:"Learned in: CET1661 Introduction to Cisco (the entire course), reinforced in every course after it."},
+ 2:{n:"Network Access",w:20,
+   x:"<span class='hl'>VLANs and trunking</span>, inter-VLAN connectivity, STP and Rapid PVST+, EtherChannel, and wireless architectures. Must-knows: native VLAN behavior, root bridge election, PortFast and BPDU Guard, and LACP vs PAgP.",
+   where:"Learned in: CTS1380 Cisco Networks, plus wireless security in CET1856 Week 3."},
+ 3:{n:"IP Connectivity",w:25,
+   x:"The heaviest domain: reading the <span class='hl'>routing table</span>, longest prefix match, administrative distance, static and default routes, single-area OSPFv2, IPv6 routing, and first hop redundancy. Must-knows: AD values, prefix-length decisions, OSPF neighbor requirements, and what HSRP provides.",
+   where:"Learned in: CET1617 Interconnecting Cisco Networks."},
+ 4:{n:"IP Services",w:10,
+   x:"NAT and PAT, NTP, DHCP and relay, DNS, SNMP, syslog, QoS concepts, SSH, and TFTP/FTP. Must-knows: inside local vs inside global, the overload keyword, DORA and ip helper-address, and syslog severity logic.",
+   where:"Learned in: CET1856 Week 1, with SSH and SNMP in Week 2 and QoS in Week 3."},
+ 5:{n:"Security Fundamentals",w:15,
+   x:"Threats and mitigation, device access control, passwords and AAA, VPNs, <span class='hl'>ACLs</span>, Layer 2 security, and wireless security. Must-knows: ACL processing and placement, port security modes, the snooping and DAI dependency, and authentication vs authorization.",
+   where:"Learned in: CET1856 Weeks 2 and 3."},
+ 6:{n:"Automation and Programmability",w:10,
+   x:"Controller-based networking and SDN, the planes, northbound and southbound APIs, REST, JSON, configuration management tools, and AI in network operations. Must-knows: the CRUD verbs, status codes, JSON objects vs arrays, and Ansible vs Puppet/Chef.",
+   where:"Learned in: CET1856 Week 4."}
+};
+const domList=document.getElementById('domList');
+Object.entries(DOM).forEach(([k,D])=>{
+  const b=document.createElement('button'); b.className='dom';
+  b.innerHTML=`<span class="num">${k}.0</span><span class="nm">${D.n}</span><span class="bar"><div></div></span><span class="pct">${D.w}%</span>`;
+  b.onclick=()=>{
+    document.querySelectorAll('.dom').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    document.getElementById('dTag').textContent=`DOMAIN ${k}.0 // ${D.n.toUpperCase()} // ${D.w}% OF THE EXAM`;
+    document.getElementById('dTxt').innerHTML=D.x;
+    document.getElementById('dWhere').textContent=D.where;
+    gsap.from('#viewMap .infobar',{opacity:.6,duration:.3});
+  };
+  domList.appendChild(b);
+});
+gsap.to('.dom .bar div',{width:(i)=>(Object.values(DOM)[i].w*4)+'%',duration:1.1,stagger:.08,ease:'power2.out',delay:.3});
+
+/* ================= QUESTION BANK (5 per domain) ================= */
+const QB=[
+ {d:1,s:"How many usable host addresses does a /27 subnet provide?",o:["32","30","62","14"],a:1,e:"A /27 leaves 5 host bits: 2^5 = 32 addresses, minus network and broadcast = 30."},
+ {d:1,s:"What is the broadcast address of the subnet 192.168.10.64/26?",o:["192.168.10.63","192.168.10.127","192.168.10.128","192.168.10.255"],a:1,e:"A /26 block is 64 addresses: .64 through .127, so .127 is the broadcast."},
+ {d:1,s:"Which IPv6 prefix identifies a link-local address?",o:["2000::/3","FC00::/7","FE80::/10","FF00::/8"],a:2,e:"FE80::/10 is link-local. 2000::/3 is global unicast, FC00::/7 unique local, FF00::/8 multicast."},
+ {d:1,s:"Which transport protocol is connectionless and performs no retransmission of lost data?",o:["TCP","UDP","ICMP","ARP"],a:1,e:"UDP sends without a handshake and never retransmits. TCP is connection-oriented and reliable."},
+ {d:1,s:"A PC sends a packet to a server on a remote network. Which destination MAC address does the frame carry as it leaves the PC?",o:["The server's MAC address","The default gateway's MAC address","The broadcast MAC address","The switch's MAC address"],a:1,e:"Remote destinations are framed to the default gateway. MAC addressing is per hop; IP addressing is end to end."},
+ {d:2,s:"On an 802.1Q trunk, how are frames belonging to the native VLAN transmitted?",o:["Tagged with VLAN 1","Untagged","Double-tagged","Dropped"],a:1,e:"Native VLAN traffic crosses an 802.1Q trunk untagged. Mismatched native VLANs on the two ends cause problems."},
+ {d:2,s:"How does Spanning Tree Protocol elect the root bridge?",o:["Highest bridge ID","Lowest bridge ID (priority, then MAC address)","Most active ports","Fastest uplink"],a:1,e:"Lowest bridge ID wins: lowest priority first, lowest MAC as the tiebreaker."},
+ {d:2,s:"What does PortFast do when configured on an access port?",o:["Raises the port speed","Moves the port straight to forwarding, skipping the listening and learning states","Disables STP on the whole switch","Bundles the port into an EtherChannel"],a:1,e:"PortFast is for end-host ports: immediate forwarding. Pair it with BPDU Guard for protection."},
+ {d:2,s:"Which EtherChannel negotiation protocol is the IEEE open standard?",o:["PAgP","LACP","DTP","VTP"],a:1,e:"LACP (802.3ad) is the open standard. PAgP is Cisco proprietary."},
+ {d:2,s:"Which wireless security standard uses SAE to resist offline password-guessing attacks?",o:["WEP","WPA","WPA2","WPA3"],a:3,e:"WPA3 replaced the pre-shared-key handshake with SAE."},
+ {d:3,s:"A router learns 10.5.0.0/16 from OSPF and also has a static route to 10.5.0.0/16. Which route is installed in the routing table?",o:["The OSPF route","The static route","Both, load balanced","Neither"],a:1,e:"Same prefix, so administrative distance decides: static (1) beats OSPF (110)."},
+ {d:3,s:"A router has routes to 10.1.1.0/24 and 10.1.1.64/26. A packet arrives for 10.1.1.70. Which route is used?",o:["10.1.1.0/24","10.1.1.64/26","The default route","The packet is dropped"],a:1,e:"Longest prefix match: /26 is more specific than /24, and 10.1.1.70 falls in 10.1.1.64 through .127."},
+ {d:3,s:"What is the default administrative distance of OSPF?",o:["1","90","110","120"],a:2,e:"OSPF = 110. Static = 1, EIGRP internal = 90, RIP = 120."},
+ {d:3,s:"Which command configures a default static route through the next hop 203.0.113.1?",o:["ip route 0.0.0.0 255.255.255.255 203.0.113.1","ip route 0.0.0.0 0.0.0.0 203.0.113.1","ip default-network 203.0.113.1","route default 203.0.113.1"],a:1,e:"Network 0.0.0.0 with mask 0.0.0.0 matches everything: the gateway of last resort."},
+ {d:3,s:"What problem does a first hop redundancy protocol such as HSRP solve?",o:["Loop prevention between switches","A single point of failure at the hosts' default gateway","Slow OSPF convergence","IP address exhaustion"],a:1,e:"HSRP presents a virtual gateway IP shared by two routers, so hosts keep their gateway if one router fails."},
+ {d:4,s:"What is the correct order of messages in a DHCP lease negotiation?",o:["Offer, Discover, Request, Acknowledge","Discover, Offer, Request, Acknowledge","Discover, Request, Offer, Acknowledge","Request, Offer, Discover, Acknowledge"],a:1,e:"DORA: Discover, Offer, Request, Acknowledge."},
+ {d:4,s:"Clients and their DHCP server are on different networks. What does ip helper-address on the client-facing router interface do?",o:["Assigns addresses itself","Relays the clients' DHCP broadcasts as unicast to the server","Blocks rogue DHCP servers","Translates private addresses"],a:1,e:"Routers drop broadcasts; the helper address relays DHCP to the server's address."},
+ {d:4,s:"Which keyword in a NAT configuration enables PAT, letting many inside hosts share one public address?",o:["pool","static","overload","permit"],a:2,e:"overload = PAT. Sessions are kept apart by port numbers."},
+ {d:4,s:"A router is configured with logging trap 4. Which syslog severity levels are sent to the server?",o:["Only level 4","Levels 4 through 7","Levels 0 through 4","Levels 0 through 7"],a:2,e:"A trap level sends that level and everything more severe: 0 through 4."},
+ {d:4,s:"A switch synchronizes its clock from an NTP server at stratum 2. What stratum does the switch report?",o:["1","2","3","0"],a:2,e:"Each hop from the reference adds one: syncing from stratum 2 makes you stratum 3."},
+ {d:5,s:"Where should a standard ACL generally be placed?",o:["As close to the source as possible","As close to the destination as possible","Only on the vty lines","Only outbound on the WAN"],a:1,e:"Standard ACLs match only the source, so near the destination they avoid blocking traffic to other places."},
+ {d:5,s:"By default, how does DHCP snooping treat every switch port?",o:["Trusted","Untrusted","Err-disabled","Routed"],a:1,e:"All ports are untrusted until explicitly trusted; only the port toward the real server is trusted."},
+ {d:5,s:"Dynamic ARP Inspection validates ARP packets against which data source?",o:["The CAM table","The routing table","The DHCP snooping binding table","The ARP cache of the gateway"],a:2,e:"DAI depends on the snooping binding table, so snooping must be enabled first."},
+ {d:5,s:"Which port security violation mode drops offending frames, logs the event, and keeps the port up?",o:["protect","restrict","shutdown","sticky"],a:1,e:"Restrict logs and counts; protect is silent; shutdown err-disables the port."},
+ {d:5,s:"An administrator logs in successfully but cannot run configuration commands. Which AAA function is limiting them?",o:["Authentication","Authorization","Accounting","Encryption"],a:1,e:"Identity was proven; what they may do is governed by authorization."},
+ {d:6,s:"In a controller-based architecture, which plane is centralized in the controller?",o:["Data plane","Control plane","Physical plane","Forwarding plane"],a:1,e:"The controller centralizes control decisions; devices keep forwarding traffic in the data plane."},
+ {d:6,s:"Which API connects an SDN controller to the applications that use it?",o:["Southbound API","Northbound API","Console port","SNMP trap"],a:1,e:"Northbound faces applications (usually REST); southbound faces devices."},
+ {d:6,s:"Which HTTP method reads data from a REST API without changing anything?",o:["POST","PUT","GET","DELETE"],a:2,e:"GET = read. POST creates, PUT updates, DELETE removes."},
+ {d:6,s:"In JSON, what do square brackets [ ] represent?",o:["An object","An array","A key","A comment"],a:1,e:"Brackets hold an array (ordered list); braces hold an object of key/value pairs."},
+ {d:6,s:"Which configuration management tool is agentless and pushes YAML playbooks over SSH?",o:["Puppet","Chef","Ansible","Syslog"],a:2,e:"Ansible: agentless and push. Puppet and Chef use agents that pull."}
+];
+
+/* ================= EXAM ENGINE ================= */
+let order=[], idx=0, answers=[], sel=null, timeLeft=45*60, timerId=null, finished=false;
+const qOpts=document.getElementById('qOpts'), confirmBtn=document.getElementById('confirm');
+function fmt(t){const m=Math.floor(t/60), s=t%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
+function tick(){
+  timeLeft--; const el=document.getElementById('timer'); el.textContent=fmt(Math.max(timeLeft,0));
+  el.classList.toggle('low',timeLeft<=300);
+  if(timeLeft<=0){ finish(true); }
+}
+function render(){
+  const Q=order[idx];
+  document.getElementById('qCount').textContent=`QUESTION ${idx+1} of ${order.length}`;
+  document.getElementById('prog').style.width=((idx)/order.length*100)+'%';
+  document.getElementById('qDomain').textContent=`DOMAIN ${Q.d}.0 // ${DOM[Q.d].n.toUpperCase()}`;
+  document.getElementById('qStem').textContent=Q.s;
+  qOpts.innerHTML=''; sel=null; confirmBtn.disabled=true;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{[...qOpts.children].forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); sel=oi; confirmBtn.disabled=false;};
+    qOpts.appendChild(b);
+  });
+  confirmBtn.textContent = idx<order.length-1 ? 'CONFIRM ▶' : 'CONFIRM AND FINISH \u{1F3C1}';
+  gsap.from('#qArea .stem, #qOpts',{opacity:.3,duration:.3});
+}
+function start(){
+  order=shuffle([...QB]); idx=0; answers=[]; timeLeft=45*60; finished=false;
+  document.getElementById('intro').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('review').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  document.getElementById('timer').textContent=fmt(timeLeft);
+  document.getElementById('timer').classList.remove('low');
+  clearInterval(timerId); timerId=setInterval(tick,1000);
+  render();
+}
+confirmBtn.onclick=()=>{
+  if(sel===null||finished)return;
+  answers[idx]=sel;
+  if(idx<order.length-1){idx++; render();} else finish(false);
+};
+function finish(timeout){
+  if(finished)return; finished=true; clearInterval(timerId);
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('results'); res.style.display='block';
+  const per={}; [1,2,3,4,5,6].forEach(d=>per[d]=[0,0]);
+  let raw=0;
+  order.forEach((Q,i)=>{per[Q.d][1]++; if(answers[i]===Q.a){per[Q.d][0]++; raw++;}});
+  let weighted=0;
+  [1,2,3,4,5,6].forEach(d=>{weighted+=DOM[d].w*(per[d][0]/per[d][1]);});
+  weighted=Math.round(weighted);
+  document.getElementById('rWeighted').textContent=weighted+'%';
+  document.getElementById('rRaw').textContent=`Weighted readiness score • raw score ${raw} / ${order.length}`+(timeout?' • time expired':'');
+  const v=document.getElementById('rVerdict');
+  if(weighted>=85){v.textContent='READY: talk to your instructor about scheduling the CCNA.'; v.style.color='#2E8B57';}
+  else if(weighted>=70){v.textContent='CLOSE: one to two weeks of targeted review, then retake this exam.'; v.style.color='#C9A227';}
+  else {v.textContent='NOT YET: rebuild the weak domains below before scheduling.'; v.style.color='#C0392B';}
+  const bars=document.getElementById('rBars'); bars.innerHTML='';
+  [1,2,3,4,5,6].forEach(d=>{
+    const pct=Math.round(per[d][0]/per[d][1]*100);
+    const color= pct>=80?'#2E8B57':pct>=60?'#C9A227':'#C0392B';
+    const r=document.createElement('div'); r.className='rrow';
+    r.innerHTML=`<span class="nm">${d}.0 ${DOM[d].n}</span><span class="bar"><div style="background:${color}"></div></span><span class="v">${per[d][0]}/${per[d][1]}</span>`;
+    bars.appendChild(r);
+    gsap.to(r.querySelector('.bar div'),{width:pct+'%',duration:1,ease:'power2.out',delay:.1*d});
+  });
+  const weak=[1,2,3,4,5,6].filter(d=>per[d][0]/per[d][1]<0.8).sort((a,b)=>(per[a][0]/per[a][1])-(per[b][0]/per[b][1])||DOM[b].w-DOM[a].w);
+  document.getElementById('rPlan').innerHTML = weak.length===0 ?
+    '<strong>Study plan:</strong> every domain is at 80 percent or higher. Retake once more in a new order to confirm the result is stable, then bring this breakdown to your instructor.' :
+    '<strong>Study plan, weakest first:</strong><br>'+weak.map(d=>`&#9656; <strong>${d}.0 ${DOM[d].n}</strong> (${DOM[d].w}% of the exam): ${DOM[d].where.replace('Learned in: ','revisit ')}`).join('<br>')+
+    '<br>Work the weakest domain first, redo its Packet Tracer labs from memory, then retake this exam in a new order.';
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('startExam').onclick=start;
+document.getElementById('retake').onclick=start;
+document.getElementById('showReview').onclick=()=>{
+  const rv=document.getElementById('review'); rv.innerHTML='';
+  order.forEach((Q,i)=>{
+    const ok=answers[i]===Q.a;
+    const d=document.createElement('div'); d.className='rv';
+    const yours = answers[i]===undefined ? 'no answer' : Q.o[answers[i]];
+    d.innerHTML=`<span class="${ok?'ok':'no'}">${ok?'✓':'✗'} Q${i+1}</span> ${Q.s}<br><span style="color:#4A5A78;">Your answer: ${yours}${ok?'':' • Correct: <strong>'+Q.o[Q.a]+'</strong>'}. ${Q.e}</span>`;
+    rv.appendChild(d);
+  });
+  rv.style.display='block';
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>

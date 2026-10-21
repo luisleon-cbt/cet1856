@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 4 &bull; Automation &amp; Programmability</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .panel svg{width:100%; height:auto; display:block;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12.5px; padding:8px 16px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;}
+  .chip{font-family:'Chakra Petch',sans-serif; font-size:13px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:24px; padding:9px 18px; cursor:pointer;}
+  .chip.on{border-color:var(--gold); background:#2D4372;}
+  .chiplabel{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--sky); letter-spacing:2px; margin:14px 0 6px;}
+  /* REST console */
+  .rest{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media(max-width:780px){.rest{grid-template-columns:1fr;}}
+  .term{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:12px 14px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#9CCDE8; min-height:220px; white-space:pre-wrap; word-break:break-word; line-height:1.55;}
+  .term .t{color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:8px;}
+  .term .ok{color:#7BE0C3;} .term .no{color:#E98B80;} .term .m{color:#fff;}
+  .meth{font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; border:2px solid #3D5178; border-radius:10px; padding:9px 14px; cursor:pointer; background:var(--navy2); color:#fff;}
+  .meth.on{border-color:var(--gold); background:#2D4372;}
+  .tokrow{display:flex; align-items:center; gap:10px; color:var(--sky); font-size:13px; font-family:'Chakra Petch',sans-serif;}
+  /* JSON */
+  .jsonbox{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:14px 16px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#fff; white-space:pre; overflow-x:auto; line-height:1.55;}
+  .jk{color:#9CCDE8;} .js{color:#7BE0C3;} .jn{color:#C9A227;} .jb{color:#E9A2F0;}
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 4 // ARTIFACT 1 of 2</div>
+    <h1>Automation &amp; Programmability</h1>
+    <p>Configuring forty routers one SSH session at a time does not scale. This simulation shows you what replaced it: controllers that hold the network's brain, REST APIs your code can talk to, JSON as the language of the answers, and the tools and AI that run modern operations. Then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. Traditional vs controller-based</h2>
+    <div class="sub">Toggle the architecture, then click each plane and API. Watch where the control plane lives in each model.</div>
+    <div class="panel">
+      <svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" aria-label="Network architecture comparison">
+        <!-- apps + controller (controller mode) -->
+        <g id="ctrlLayer" opacity="0">
+          <rect x="380" y="10" width="240" height="40" rx="8" fill="#24365E" stroke="#9CCDE8" stroke-width="1.5"/>
+          <text x="500" y="35" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">APPS &bull; scripts &bull; dashboards</text>
+          <line x1="500" y1="50" x2="500" y2="88" stroke="#C9A227" stroke-width="3"/>
+          <text x="512" y="74" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" fill="#C9A227">NORTHBOUND API (REST)</text>
+          <rect x="360" y="88" width="280" height="54" rx="10" fill="#C9A227"/>
+          <text x="500" y="112" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:15px;" fill="#1B2A4A">SDN CONTROLLER</text>
+          <text x="500" y="131" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" fill="#1B2A4A">centralized control plane</text>
+          <line x1="430" y1="142" x2="190" y2="196" stroke="#6EB5DC" stroke-width="2.5"/>
+          <line x1="500" y1="142" x2="500" y2="196" stroke="#6EB5DC" stroke-width="2.5"/>
+          <line x1="570" y1="142" x2="810" y2="196" stroke="#6EB5DC" stroke-width="2.5"/>
+          <text x="660" y="172" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" fill="#6EB5DC">SOUTHBOUND API</text>
+          <text x="660" y="186" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">NETCONF / RESTCONF / OpenFlow</text>
+        </g>
+        <!-- three devices -->
+        <g id="devs">
+          <g><rect x="110" y="196" width="160" height="88" rx="10" fill="#24365E" stroke="#3D5178" stroke-width="2"/>
+            <text x="190" y="216" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">R1</text>
+            <rect class="cp" x="124" y="224" width="132" height="22" rx="5" fill="#C9A227"/>
+            <text class="cpt" x="190" y="239" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">control plane</text>
+            <rect x="124" y="252" width="132" height="22" rx="5" fill="#6EB5DC"/>
+            <text x="190" y="267" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">data plane</text></g>
+          <g><rect x="420" y="196" width="160" height="88" rx="10" fill="#24365E" stroke="#3D5178" stroke-width="2"/>
+            <text x="500" y="216" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">R2</text>
+            <rect class="cp" x="434" y="224" width="132" height="22" rx="5" fill="#C9A227"/>
+            <text class="cpt" x="500" y="239" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">control plane</text>
+            <rect x="434" y="252" width="132" height="22" rx="5" fill="#6EB5DC"/>
+            <text x="500" y="267" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">data plane</text></g>
+          <g><rect x="730" y="196" width="160" height="88" rx="10" fill="#24365E" stroke="#3D5178" stroke-width="2"/>
+            <text x="810" y="216" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">SW1</text>
+            <rect class="cp" x="744" y="224" width="132" height="22" rx="5" fill="#C9A227"/>
+            <text class="cpt" x="810" y="239" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">control plane</text>
+            <rect x="744" y="252" width="132" height="22" rx="5" fill="#6EB5DC"/>
+            <text x="810" y="267" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;" fill="#1B2A4A">data plane</text></g>
+        </g>
+        <!-- traditional admin -->
+        <g id="tradLayer">
+          <text x="500" y="60" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:15px;" fill="#fff">ADMIN &bull; one SSH session per device</text>
+          <line x1="470" y1="72" x2="200" y2="194" stroke="#9CCDE8" stroke-width="2" stroke-dasharray="6 6"/>
+          <line x1="500" y1="72" x2="500" y2="194" stroke="#9CCDE8" stroke-width="2" stroke-dasharray="6 6"/>
+          <line x1="530" y1="72" x2="800" y2="194" stroke="#9CCDE8" stroke-width="2" stroke-dasharray="6 6"/>
+          <text x="500" y="150" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" fill="#9CCDE8">every device makes its own control decisions</text>
+        </g>
+      </svg>
+      <div class="btns">
+        <div class="mode">
+          <button id="mTrad" class="on">TRADITIONAL</button>
+          <button id="mCtrl">CONTROLLER-BASED</button>
+        </div>
+      </div>
+      <div class="chips" style="margin-top:12px;">
+        <button class="chip" data-p="mgmt">MANAGEMENT PLANE</button>
+        <button class="chip" data-p="ctrl">CONTROL PLANE</button>
+        <button class="chip" data-p="data">DATA PLANE</button>
+        <button class="chip" data-p="north">NORTHBOUND API</button>
+        <button class="chip" data-p="south">SOUTHBOUND API</button>
+      </div>
+      <div class="infobar"><span class="tag" id="pTag">TRADITIONAL NETWORKING</span><span id="pTxt">Every router and switch runs its <span class="hl">own control plane</span>: it computes its own routes, builds its own tables, and is configured one device at a time over SSH. Distributed, proven, and slow to change at scale.</span><span class="exam" id="pExam">Exam angle: in traditional networking the control plane is distributed across every device. Toggle to see what a controller changes.</span></div>
+    </div>
+
+    <h2>2. The REST API console</h2>
+    <div class="sub">You are a script talking to a controller. Pick a method, pick whether you send a valid token, and press SEND. Read the status code and the JSON response.</div>
+    <div class="panel">
+      <div class="btns" style="margin-top:0;">
+        <button class="meth on" data-m="GET">GET</button>
+        <button class="meth" data-m="POST">POST</button>
+        <button class="meth" data-m="PUT">PUT</button>
+        <button class="meth" data-m="DELETE">DELETE</button>
+        <span class="tokrow" style="margin-left:auto;">X-Auth-Token:
+          <span class="mode"><button id="tokOk" class="on">VALID</button><button id="tokNo">MISSING</button></span>
+        </span>
+        <button class="btn gold" id="sendBtn">SEND &#9654;</button>
+      </div>
+      <div class="rest" style="margin-top:14px;">
+        <div class="term" id="reqBox"><span class="t">REQUEST</span>Choose a method and press SEND.</div>
+        <div class="term" id="resBox"><span class="t">RESPONSE</span>&mdash;</div>
+      </div>
+      <div class="infobar"><span class="tag" id="rTag">CRUD MAP</span><span id="rTxt">REST maps four HTTP verbs onto four operations: <span class="hl">POST = create, GET = read, PUT/PATCH = update, DELETE = delete</span>. The status code tells your script whether it worked before it reads a single byte of JSON.</span><span class="exam" id="rExam">Exam angle: know the verb-to-CRUD mapping and the status families: 2xx success, 4xx client error, 5xx server error.</span></div>
+    </div>
+
+    <h2>3. Read the JSON</h2>
+    <div class="sub">This is what a controller returns about one device. Study it, then answer six questions about it. Reading JSON is a tested skill.</div>
+    <div class="panel">
+      <div class="jsonbox" id="jsonBox"></div>
+      <div class="drill" style="margin-top:14px;">
+        <div class="scen" id="jScen">Six questions about the document above.</div>
+        <div class="opts" id="jOpts"></div>
+        <div class="meta"><span>Question <b id="jRound">0</b>/6</span><span>Score <b id="jScore">0</b></span></div>
+        <button class="btn gold" id="jStart" style="margin-top:14px;">START</button>
+        <div class="final" id="jFinal"></div>
+      </div>
+    </div>
+
+    <h2>4. Tools and AI in operations</h2>
+    <div class="sub">Click each configuration management tool, then each AI concept. These recognition-level distinctions appear on the exam.</div>
+    <div class="panel">
+      <div class="chiplabel">CONFIGURATION MANAGEMENT</div>
+      <div class="chips">
+        <button class="chip on" data-t="ans">ANSIBLE</button>
+        <button class="chip" data-t="tf">TERRAFORM</button>
+        <button class="chip" data-t="pup">PUPPET</button>
+        <button class="chip" data-t="chef">CHEF</button>
+      </div>
+      <div class="chiplabel">AI AND MACHINE LEARNING</div>
+      <div class="chips">
+        <button class="chip" data-t="ml">MACHINE LEARNING</button>
+        <button class="chip" data-t="pred">PREDICTIVE AI</button>
+        <button class="chip" data-t="gen">GENERATIVE AI</button>
+      </div>
+      <div class="infobar"><span class="tag" id="tTag">ANSIBLE</span><span id="tTxt"><span class="hl">Agentless</span>: nothing is installed on the managed devices. A control node pushes changes over SSH using <span class="hl">playbooks written in YAML</span>. The most common choice for network automation.</span><span class="exam" id="tExam">Exam angle: Ansible = agentless + push + YAML. Puppet and Chef = agent-based + pull.</span></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">Domain 6 questions follow four reliable patterns.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: the planes and the APIs</h3>
+      <p><strong>Data plane</strong> forwards packets. <strong>Control plane</strong> decides where they go (routing protocols, STP). <strong>Management plane</strong> is how humans and tools configure the device (SSH, SNMP). A controller <strong>centralizes the control plane</strong>. It talks <code>northbound</code> to apps (usually REST) and <code>southbound</code> to devices (NETCONF, RESTCONF, OpenFlow).</p>
+      <span class="trap">Trap: north vs south reversed. Northbound faces the applications above; southbound faces the devices below.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: REST verbs and status codes</h3>
+      <p><code>GET</code> read, <code>POST</code> create, <code>PUT/PATCH</code> update, <code>DELETE</code> delete. REST is <strong>stateless</strong>: each request carries everything needed, including authentication (often a token header). Status codes: <code>200 OK</code>, <code>201 Created</code>, <code>204 No Content</code>, <code>401 Unauthorized</code>, <code>403 Forbidden</code>, <code>404 Not Found</code>, <code>500</code> server error.</p>
+      <span class="trap">Trap: POST vs PUT. POST creates a new resource; PUT replaces or updates an existing one.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: reading JSON</h3>
+      <p>Curly braces <code>{ }</code> hold an <strong>object</strong> of key/value pairs. Square brackets <code>[ ]</code> hold an <strong>array</strong> (an ordered list). Keys are always quoted strings. Values can be strings, numbers, <code>true/false</code>, <code>null</code>, objects, or arrays. Count array items by counting the objects between the brackets.</p>
+      <span class="trap">Trap: "10" in quotes is a string, 10 without quotes is a number. The exam tests the difference.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: tools, and AI in operations</h3>
+      <p><strong>Ansible</strong>: agentless, push, YAML, SSH. <strong>Puppet</strong> and <strong>Chef</strong>: agent-based, pull. <strong>Terraform</strong>: declarative infrastructure as code. For AI: <strong>predictive AI</strong> forecasts from historical data (capacity, failures), <strong>generative AI</strong> produces new content (configs, summaries, chat assistants), and <strong>machine learning</strong> is how both learn patterns from data.</p>
+      <span class="trap">Trap: "detect anomalies and forecast a link failure before it happens" is predictive, not generative.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. (Your graded final quiz is in Canvas after Artifact 2.)</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering controllers, REST APIs, JSON, configuration management, and AI. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">Controllers<b id="bdC">0/0</b></div>
+          <div class="cell">REST<b id="bdR">0/0</b></div>
+          <div class="cell">JSON<b id="bdJ">0/0</b></div>
+          <div class="cell">Tools &amp; AI<b id="bdT">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W4S13</span> and <span style="font-family:'IBM Plex Mono',monospace;">W4S14</span> you stand up a Packet Tracer network controller and query it with a Python script over its REST API. Then continue to Artifact 2 (CCNA Exam Readiness).</div>
+</div>
+
+<script>
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function setBar(tagId,txtId,examId,t,x,e){
+  document.getElementById(tagId).textContent=t;
+  document.getElementById(txtId).innerHTML=x;
+  document.getElementById(examId).innerHTML=e;
+}
+
+/* ================= 1. ARCHITECTURE ================= */
+let ctrlMode=false;
+function arch(c){
+  ctrlMode=c;
+  document.getElementById('mTrad').classList.toggle('on',!c);
+  document.getElementById('mCtrl').classList.toggle('on',c);
+  gsap.to('#ctrlLayer',{opacity:c?1:0,duration:.5});
+  gsap.to('#tradLayer',{opacity:c?0:1,duration:.5});
+  document.querySelectorAll('.cp').forEach(el=>{gsap.to(el,{opacity:c?.15:1,duration:.5});});
+  document.querySelectorAll('.cpt').forEach(el=>{el.textContent=c?'(moved to controller)':'control plane'; el.style.fill=c?'#9CCDE8':'#1B2A4A';});
+  if(c) setBar('pTag','pTxt','pExam','CONTROLLER-BASED (SDN)',
+    "The control plane is <span class='hl'>lifted out of every device and centralized</span> in the controller. Devices keep forwarding (data plane) while the controller decides policy and pushes it down. Apps talk to the controller instead of to forty separate devices.",
+    "Exam angle: controller-based networking centralizes the control plane and exposes the network through APIs.");
+  else setBar('pTag','pTxt','pExam','TRADITIONAL NETWORKING',
+    "Every router and switch runs its <span class='hl'>own control plane</span>: it computes its own routes, builds its own tables, and is configured one device at a time over SSH. Distributed, proven, and slow to change at scale.",
+    "Exam angle: in traditional networking the control plane is distributed across every device.");
+}
+document.getElementById('mTrad').onclick=()=>arch(false);
+document.getElementById('mCtrl').onclick=()=>arch(true);
+const PL={
+ mgmt:{t:"MANAGEMENT PLANE",x:"How people and tools <span class='hl'>configure and monitor</span> the device: SSH, the console, SNMP, syslog, and APIs. It does not forward user traffic and does not compute routes.",e:"Exam angle: SSH, SNMP, and configuration access all belong to the management plane."},
+ ctrl:{t:"CONTROL PLANE",x:"The <span class='hl'>decision maker</span>: routing protocols such as OSPF, STP, ARP, and building the routing table. In SDN this is the part the controller centralizes.",e:"Exam angle: 'which plane runs OSPF and builds the routing table?' Control plane."},
+ data:{t:"DATA PLANE",x:"The <span class='hl'>forwarding engine</span>: moving each frame or packet out the right interface based on tables the control plane already built. Also called the forwarding plane. It stays on the device in every model.",e:"Exam angle: forwarding, switching, and applying ACLs to traffic in transit happen in the data plane."},
+ north:{t:"NORTHBOUND API",x:"The interface between the controller and the <span class='hl'>applications above it</span>: scripts, dashboards, orchestration tools. Almost always a REST API returning JSON.",e:"Exam angle: northbound = controller to apps = REST. Faces UP."},
+ south:{t:"SOUTHBOUND API",x:"The interface between the controller and the <span class='hl'>network devices below it</span>. Examples: NETCONF, RESTCONF, OpenFlow, and even SSH/CLI on older gear.",e:"Exam angle: southbound = controller to devices. Faces DOWN."}
+};
+document.querySelectorAll('.chip[data-p]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-p]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const P=PL[c.dataset.p]; setBar('pTag','pTxt','pExam',P.t,P.x,P.e);
+    if(c.dataset.p==='north'||c.dataset.p==='south'){ if(!ctrlMode) arch(true); setBar('pTag','pTxt','pExam',P.t,P.x,P.e); }};
+});
+
+/* ================= 2. REST CONSOLE ================= */
+let method='GET', tokenOk=true;
+document.querySelectorAll('.meth').forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll('.meth').forEach(x=>x.classList.remove('on')); b.classList.add('on'); method=b.dataset.m;};
+});
+document.getElementById('tokOk').onclick=e=>{tokenOk=true; e.target.classList.add('on'); document.getElementById('tokNo').classList.remove('on');};
+document.getElementById('tokNo').onclick=e=>{tokenOk=false; e.target.classList.add('on'); document.getElementById('tokOk').classList.remove('on');};
+const DEVICES=[
+ {hostname:"R1",managementIpAddress:"192.168.1.1",platformId:"ISR4331",reachabilityStatus:"Reachable"},
+ {hostname:"R2",managementIpAddress:"192.168.1.3",platformId:"ISR4331",reachabilityStatus:"Reachable"},
+ {hostname:"SW2",managementIpAddress:"192.168.1.12",platformId:"C9300",reachabilityStatus:"Reachable"}
+];
+const REQ={
+ GET:{path:"/api/v1/network-device", body:null, code:"200 OK", cls:"ok",
+   res:()=>JSON.stringify({response:DEVICES},null,2),
+   tag:"GET = READ", x:"The controller returned every device it manages as a JSON <span class='hl'>array of objects</span>. Nothing changed on the network: GET only reads.", e:"Exam angle: GET is safe and read-only. 200 OK means the request succeeded and the body holds the data."},
+ POST:{path:"/api/v1/network-device", body:{managementIpAddress:"192.168.1.20",platformId:"C9200"}, code:"201 Created", cls:"ok",
+   res:()=>JSON.stringify({response:{taskId:"7f3a-51c2",url:"/api/v1/task/7f3a-51c2"},version:"1.0"},null,2),
+   tag:"POST = CREATE", x:"You asked the controller to <span class='hl'>add a new device</span>. 201 Created confirms a new resource now exists, and the response points you to a task you can check.", e:"Exam angle: POST creates. 201 is the 'created' success code."},
+ PUT:{path:"/api/v1/network-device/R2", body:{hostname:"R2-BRANCH"}, code:"200 OK", cls:"ok",
+   res:()=>JSON.stringify({response:{hostname:"R2-BRANCH",managementIpAddress:"192.168.1.3",status:"updated"}},null,2),
+   tag:"PUT = UPDATE", x:"You <span class='hl'>updated an existing resource</span>: R2 is now R2-BRANCH. PUT targets a specific resource by its path.", e:"Exam angle: PUT (or PATCH) updates an existing resource; POST creates a new one."},
+ DELETE:{path:"/api/v1/network-device/SW2", body:null, code:"204 No Content", cls:"ok",
+   res:()=>"(empty body)",
+   tag:"DELETE = DELETE", x:"SW2 was <span class='hl'>removed from the controller's inventory</span>. 204 No Content means success, with nothing to send back.", e:"Exam angle: 204 is a success code with an empty body, common after DELETE."}
+};
+document.getElementById('sendBtn').onclick=()=>{
+  const R=REQ[method];
+  let req='<span class="t">REQUEST</span><span class="m">'+method+' http://10.0.0.100'+R.path+'</span>\nContent-Type: application/json\n';
+  req+= tokenOk ? 'X-Auth-Token: ST-8812-a1f3c\n' : '<span class="no">(no X-Auth-Token header)</span>\n';
+  if(R.body) req+='\n'+JSON.stringify(R.body,null,2);
+  document.getElementById('reqBox').innerHTML=req;
+  let res;
+  if(!tokenOk){
+    res='<span class="t">RESPONSE</span><span class="no">HTTP/1.1 401 Unauthorized</span>\n\n'+JSON.stringify({response:{errorCode:"RBAC",message:"Token missing or invalid"}},null,2);
+    setBar('rTag','rTxt','rExam','401 UNAUTHORIZED',"The controller rejected the request <span class='hl'>before doing anything</span>: no valid token, no access. REST is stateless, so every single request must carry its credentials.","Exam angle: 401 = not authenticated (missing or bad credentials). 403 = authenticated but not allowed. 404 = resource not found.");
+  }else{
+    res='<span class="t">RESPONSE</span><span class="ok">HTTP/1.1 '+R.code+'</span>\n\n'+R.res();
+    setBar('rTag','rTxt','rExam',R.tag,R.x,R.e);
+  }
+  document.getElementById('resBox').innerHTML=res;
+  gsap.from('#resBox',{opacity:.2,duration:.4});
+};
+
+/* ================= 3. JSON ================= */
+const DOC={
+  hostname:"R1-HQ",
+  platformId:"ISR4331",
+  softwareVersion:"17.9.4",
+  uptimeDays:142,
+  reachable:true,
+  location:null,
+  interfaces:[
+    {name:"GigabitEthernet0/0/0",ipv4:"192.168.10.1",status:"up"},
+    {name:"GigabitEthernet0/0/1",ipv4:"10.0.0.1",status:"up"},
+    {name:"GigabitEthernet0/0/2",ipv4:"203.0.113.2",status:"down"}
+  ]
+};
+function colorJSON(obj){
+  const s=JSON.stringify(obj,null,2).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return s.replace(/("(?:[^"\\]|\\.)*")(\s*:)?|\b(true|false|null)\b|(-?\d+(?:\.\d+)?)/g,(m,str,colon,lit,num)=>{
+    if(str&&colon) return '<span class="jk">'+str+'</span>'+colon;
+    if(str) return '<span class="js">'+str+'</span>';
+    if(lit) return '<span class="jb">'+lit+'</span>';
+    if(num) return '<span class="jn">'+num+'</span>';
+    return m;
+  });
+}
+document.getElementById('jsonBox').innerHTML=colorJSON(DOC);
+const J_Q=[
+ {s:"What is the value of the key hostname?",o:["R1-HQ","ISR4331","hostname","GigabitEthernet0/0/0"],a:0,e:"Key on the left of the colon, value on the right: \"hostname\": \"R1-HQ\"."},
+ {s:"What JSON data type is the value of interfaces?",o:["Object","Array","String","Number"],a:1,e:"Square brackets [ ] mean an array: an ordered list, here a list of three objects."},
+ {s:"How many interfaces does the array contain?",o:["1","2","3","6"],a:2,e:"Count the objects between the brackets: three { } blocks."},
+ {s:"What data type is the value of uptimeDays?",o:["String","Number","Boolean","Null"],a:1,e:"142 has no quotes, so it is a number. \"142\" in quotes would be a string."},
+ {s:"What data type is the value of reachable?",o:["String","Number","Boolean","Object"],a:2,e:"true without quotes is a boolean. Booleans are only true or false."},
+ {s:"Which interface reports a status of down?",o:["GigabitEthernet0/0/0","GigabitEthernet0/0/1","GigabitEthernet0/0/2","None of them"],a:2,e:"The third object in the array: name GigabitEthernet0/0/2, status \"down\". Reading nested values is exactly what a script does."}
+];
+let jOrder=[], jI=0, jS=0;
+function jRound(){
+  if(jI>=J_Q.length){
+    document.getElementById('jScen').textContent="Done.";
+    document.getElementById('jOpts').innerHTML='';
+    const f=document.getElementById('jFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${jS} / 6 `+(jS===6?"You read JSON like a script.":jS>=4?"Close. Re-read Pattern 3 and retake.":"Study the braces and brackets, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('jStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=jOrder[jI];
+  document.getElementById('jRound').textContent=jI+1;
+  document.getElementById('jScen').textContent=Q.s;
+  gsap.from('#jScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('jOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){jS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#jScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('jScore').textContent=jS;
+      document.getElementById('jScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; jI++; jRound();},2200);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('jStart').onclick=e=>{
+  jOrder=[...J_Q]; jI=0; jS=0;
+  document.getElementById('jScore').textContent="0";
+  document.getElementById('jFinal').style.display='none';
+  e.target.style.display='none'; jRound();
+};
+
+/* ================= 4. TOOLS & AI ================= */
+const TL={
+ ans:{t:"ANSIBLE",x:"<span class='hl'>Agentless</span>: nothing is installed on the managed devices. A control node pushes changes over SSH using <span class='hl'>playbooks written in YAML</span>. The most common choice for network automation.",e:"Exam angle: Ansible = agentless + push + YAML."},
+ tf:{t:"TERRAFORM",x:"<span class='hl'>Declarative infrastructure as code</span>: you describe the end state you want, and Terraform works out the steps to get there and tracks what it built in a state file. Strong for cloud and multi-vendor provisioning.",e:"Exam angle: Terraform = declarative IaC, describe the desired state."},
+ pup:{t:"PUPPET",x:"<span class='hl'>Agent-based</span>: an agent on each managed node periodically <span class='hl'>pulls</span> its configuration from a Puppet server and enforces it. Manifests describe the desired state.",e:"Exam angle: Puppet = agent-based + pull."},
+ chef:{t:"CHEF",x:"Also <span class='hl'>agent-based and pull</span>: nodes run a Chef client that fetches cookbooks and recipes (written in Ruby) from a Chef server.",e:"Exam angle: Chef = agent-based + pull, recipes and cookbooks."},
+ ml:{t:"MACHINE LEARNING",x:"Systems that <span class='hl'>learn patterns from data</span> instead of following hand-written rules. In networks: learning what normal traffic looks like so deviations stand out. ML is the engine underneath both predictive and generative AI.",e:"Exam angle: ML = learning patterns from data, for example baselining normal behavior."},
+ pred:{t:"PREDICTIVE AI",x:"Uses historical data to <span class='hl'>forecast what will happen</span>: a link that will saturate next quarter, an interface showing errors that precede failure, anomalies that suggest a problem before users notice.",e:"Exam angle: forecasting, anomaly detection, and capacity planning = predictive AI."},
+ gen:{t:"GENERATIVE AI",x:"Produces <span class='hl'>new content</span>: drafting a configuration from a plain-language request, summarizing thousands of log lines, or answering an engineer's questions in a chat assistant. Its output must still be reviewed before it touches production.",e:"Exam angle: creating configs, scripts, summaries, or conversational answers = generative AI."}
+};
+document.querySelectorAll('.chip[data-t]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-t]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const T=TL[c.dataset.t]; setBar('tTag','tTxt','tExam',T.t,T.x,T.e);};
+});
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"C",stem:"In a controller-based architecture, which plane is centralized in the controller?",
+  o:["Data plane","Control plane","Management plane only","Physical plane"],a:1,
+  e:"The controller takes over the control plane decisions; devices keep forwarding in the data plane."},
+ {t:"C",stem:"Which API sits between an SDN controller and the applications that use it?",
+  o:["Southbound API","Northbound API","Eastbound API","Data plane API"],a:1,
+  e:"Northbound faces up toward applications and is usually REST."},
+ {t:"C",stem:"Which is an example of a southbound protocol?",
+  o:["NETCONF","HTTP to a dashboard","SMTP","DHCP"],a:0,
+  e:"NETCONF, RESTCONF, and OpenFlow connect the controller down to devices."},
+ {t:"R",stem:"Which HTTP method is used to read data from a REST API without changing anything?",
+  o:["POST","PUT","GET","DELETE"],a:2,
+  e:"GET is the read-only verb in the CRUD mapping."},
+ {t:"R",stem:"A script receives HTTP status 401 from a controller. What does it mean?",
+  o:["The request succeeded","The resource was not found","The request lacked valid authentication","The server crashed"],a:2,
+  e:"401 Unauthorized: missing or invalid credentials such as a token. 404 is not found; 5xx is a server error."},
+ {t:"R",stem:"Which HTTP method creates a new resource through a REST API?",
+  o:["GET","POST","DELETE","HEAD"],a:1,
+  e:"POST creates. A successful create often returns 201 Created."},
+ {t:"J",stem:"In JSON, what do square brackets [ ] represent?",
+  o:["An object","An array","A string","A comment"],a:1,
+  e:"Square brackets enclose an array, an ordered list of values."},
+ {t:"J",stem:"In the JSON pair \"vlan\": \"10\", what is the data type of the value?",
+  o:["Number","String","Boolean","Array"],a:1,
+  e:"The quotes make it a string. Without quotes, 10 would be a number."},
+ {t:"T",stem:"Which configuration management tool is agentless and uses YAML playbooks pushed over SSH?",
+  o:["Puppet","Chef","Ansible","SNMP"],a:2,
+  e:"Ansible is agentless and push-based. Puppet and Chef use agents that pull."},
+ {t:"T",stem:"A tool analyzes months of interface statistics to warn that a WAN link will saturate next quarter. This is an example of:",
+  o:["Generative AI","Predictive AI","A southbound API","A REST DELETE"],a:1,
+  e:"Forecasting from historical data is predictive AI. Generative AI produces new content."}
+];
+const TOPICS={C:"CONTROLLERS",R:"REST",J:"JSON",T:"TOOLS & AI"};
+let qOrder=[], qi=0, qScore=0, per={C:[0,0],R:[0,0],J:[0,0],T:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdC').textContent=per.C[0]+"/"+per.C[1];
+  document.getElementById('bdR').textContent=per.R[0]+"/"+per.R[1];
+  document.getElementById('bdJ').textContent=per.J[0]+"/"+per.J[1];
+  document.getElementById('bdT').textContent=per.T[0]+"/"+per.T[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on Domain 6. Move to Artifact 2 (CCNA Exam Readiness).":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: toggle both architectures, send all four REST methods with and without a token, finish the JSON reader at 6/6, then retake.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+function startQ(){qOrder=shuffle([...QB]); qi=0; qScore=0; per={C:[0,0],R:[0,0],J:[0,0],T:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();}
+document.getElementById('qStart').onclick=e=>{e.target.style.display='none'; startQ();};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block'; startQ();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>
