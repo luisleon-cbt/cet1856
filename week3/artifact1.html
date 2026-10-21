@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 3 &bull; Layer 2 &amp; Wireless Defense</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .panel svg{width:100%; height:auto; display:block;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:100px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden; margin-left:auto; flex-wrap:wrap;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12px; padding:8px 13px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;}
+  .chip{font-family:'Chakra Petch',sans-serif; font-size:13px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:24px; padding:9px 18px; cursor:pointer;}
+  .chip.on{border-color:var(--gold); background:#2D4372;}
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 3 // ARTIFACT 1 of 2</div>
+    <h1>Layer 2 &amp; Wireless Defense</h1>
+    <p>The access layer is where networks are won or lost. This simulation puts you in the defender's seat: recognize the symptom, pick the one control that closes it, and watch the switch enforce your policy. Then learn the wireless security ladder and switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. The defense console</h2>
+    <div class="sub">Each scenario describes a Layer 2 risk at the access edge. Read the symptom, then deploy the correct control. Only one of the three stops each risk, and the switch shows you the result.</div>
+    <div class="panel">
+      <svg viewBox="0 0 1000 250" xmlns="http://www.w3.org/2000/svg" aria-label="Switch with a protected host, a server, and an access port under review">
+        <line id="w0" x1="170" y1="118" x2="448" y2="118" stroke="#3D5178" stroke-width="3"/>
+        <line id="w1" x1="552" y1="118" x2="828" y2="118" stroke="#3D5178" stroke-width="3"/>
+        <line id="w2" x1="500" y1="200" x2="500" y2="146" stroke="#3D5178" stroke-width="3"/>
+        <!-- host -->
+        <g><rect x="92" y="94" width="76" height="48" rx="6" fill="#6EB5DC"/><rect x="103" y="103" width="54" height="30" rx="2" fill="#1B2A4A"/>
+          <text x="130" y="166" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">PC-STAFF</text>
+          <text x="130" y="182" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">Fa0/1</text></g>
+        <!-- switch -->
+        <g><rect x="448" y="92" width="104" height="52" rx="8" fill="#9CCDE8"/>
+          <path d="M466 118 h14 m8 0 h14 m8 0 h14" stroke="#1B2A4A" stroke-width="3.6"/>
+          <text x="500" y="84" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:14px;" fill="#fff">SW1</text></g>
+        <text id="swBadge" x="500" y="58" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;" fill="#C9A227" opacity="0"></text>
+        <!-- server -->
+        <g><rect x="828" y="88" width="50" height="62" rx="7" fill="#6EB5DC"/><rect x="836" y="96" width="34" height="9" rx="2" fill="#1B2A4A"/><rect x="836" y="110" width="34" height="9" rx="2" fill="#1B2A4A"/><rect x="836" y="124" width="34" height="9" rx="2" fill="#1B2A4A"/>
+          <text x="853" y="170" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">SRV-DHCP</text>
+          <text x="853" y="186" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">Fa0/24 &bull; trusted uplink</text></g>
+        <!-- access port under review -->
+        <g><rect x="462" y="200" width="76" height="42" rx="6" fill="#4A5A78"/><rect x="473" y="207" width="54" height="26" rx="2" fill="#1B2A4A"/>
+          <text x="500" y="262" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:12px;" fill="#fff" opacity="0.85">Fa0/10 access port</text>
+          <text x="640" y="228" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">untrusted by default</text></g>
+        <!-- status token on Fa0/10 -->
+        <g id="statusTok" opacity="0">
+          <rect x="455" y="162" width="90" height="22" rx="11" fill="#17402B" stroke="#2E8B57" stroke-width="2"/>
+          <text id="statusTxt" x="500" y="177" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:700;" fill="#7BE0C3">SECURED</text>
+        </g>
+      </svg>
+      <div class="infobar"><span class="tag" id="aTag">SCENARIO 1 // CAM TABLE EXHAUSTION</span><span id="aTxt" style="display:block;"></span><span class="exam" id="aExam"></span></div>
+      <div class="btns">
+        <div class="mode" style="margin-left:0;">
+          <button id="mFlood" class="on">CAM EXHAUSTION</button>
+          <button id="mRogue">ROGUE DHCP</button>
+          <button id="mArp">ARP POISONING</button>
+        </div>
+      </div>
+      <div class="btns">
+        <span style="color:var(--sky); font-size:13.5px; font-family:'Chakra Petch',sans-serif;">DEPLOY A CONTROL:</span>
+        <button class="btn ghost" id="dPs">PORT SECURITY</button>
+        <button class="btn ghost" id="dSnoop">DHCP SNOOPING</button>
+        <button class="btn ghost" id="dDai">DYNAMIC ARP INSPECTION</button>
+      </div>
+    </div>
+
+    <h2>2. Port security and the access-port toolkit</h2>
+    <div class="sub">Click each tool. The violation modes table is guaranteed exam material.</div>
+    <div class="panel">
+      <div class="chips">
+        <button class="chip on" data-p="pr">PROTECT</button>
+        <button class="chip" data-p="re">RESTRICT</button>
+        <button class="chip" data-p="sh">SHUTDOWN</button>
+        <button class="chip" data-p="st">STICKY</button>
+        <button class="chip" data-p="bp">BPDU GUARD</button>
+      </div>
+      <div class="infobar"><span class="tag" id="pTag">PROTECT</span><span id="pTxt">The quietest violation mode: frames from unknown MAC addresses are <span class="hl">dropped silently</span>. No log, no counter, and the port stays up. You never learn it happened.</span><span class="exam" id="pExam">Exam angle: the three violation modes differ in exactly two ways: does it log and count, and does the port stay up. Protect: no, and yes.</span></div>
+    </div>
+
+    <h2>3. The wireless security ladder</h2>
+    <div class="sub">Each rung fixed the one below it. Click from the broken past to the current standard.</div>
+    <div class="panel">
+      <div class="chips">
+        <button class="chip" data-w="wep">WEP</button>
+        <button class="chip" data-w="wpa">WPA</button>
+        <button class="chip on" data-w="w2p">WPA2-PSK</button>
+        <button class="chip" data-w="w2e">WPA2-ENTERPRISE</button>
+        <button class="chip" data-w="w3">WPA3</button>
+      </div>
+      <div class="infobar"><span class="tag" id="wTag">WPA2-PSK // THE SMALL-OFFICE STANDARD</span><span id="wTxt">AES-CCMP encryption with one <span class="hl">pre-shared key</span> for everyone. Strong crypto, weak key management: one departing employee means re-keying every device.</span><span class="exam" id="wExam">Exam angle: PSK means personal / small office, one shared passphrase. WPA3 replaced the crackable handshake with SAE.</span></div>
+    </div>
+
+    <h2>4. Name the control drill</h2>
+    <div class="sub">Eight symptoms from the field. Pick the control that closes each one.</div>
+    <div class="drill">
+      <div class="scen" id="dScen">Eight rounds covering Layer 2 controls, violation modes, and wireless choices.</div>
+      <div class="opts" id="dOpts"></div>
+      <div class="meta"><span>Round <b id="dRound">0</b>/8</span><span>Score <b id="dScore">0</b></span></div>
+      <button class="btn gold" id="dStart" style="margin-top:16px;">START</button>
+      <div class="final" id="dFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">Layer 2 and wireless security produce four reliable question patterns.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: the violation modes table</h3>
+      <p>All three modes drop frames from unknown MAC addresses. <code>protect</code>: drops silently. <code>restrict</code>: drops, logs, and increments the counter, the port stays up. <code>shutdown</code> (the default): the port goes <strong>err-disabled</strong>, recovered with shutdown then no shutdown. <code>sticky</code> is not a mode: it makes learned MAC addresses persist in the running config.</p>
+      <span class="trap">Trap: "the port is down and the config shows port-security" is err-disabled from a shutdown violation. Recovery is shut, then no shut.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: snooping trust and the binding table</h3>
+      <p>DHCP snooping marks every port <strong>untrusted by default</strong>: server-only messages (OFFER, ACK) arriving on an untrusted port are dropped, which neutralizes a rogue DHCP server. The port toward the legitimate server or uplink gets <code>ip dhcp snooping trust</code>. As leases flow, snooping builds the <strong>binding table</strong> of IP, MAC, port, and VLAN.</p>
+      <span class="trap">Trap: forgetting to trust the real server's port blocks legitimate DHCP too. "Snooping on, nobody gets a lease" means a missing trust statement.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: DAI depends on snooping</h3>
+      <p>Dynamic ARP Inspection validates each ARP packet's IP-to-MAC pairing <strong>against the DHCP snooping binding table</strong>. No snooping, no table, no DAI. That dependency is the tested fact.</p>
+      <span class="trap">Trap: "enable DAI alone to stop ARP poisoning" fails, because the binding table does not exist until snooping runs first.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: the wireless decision tree</h3>
+      <p><code>one shared passphrase</code> is PSK (personal). <code>per-user credentials / RADIUS / 802.1X</code> is Enterprise. <code>SAE handshake / protection against offline dictionary attacks</code> is <strong>WPA3</strong>. WEP and WPA (TKIP) appear only as the broken answers.</p>
+      <span class="trap">Trap: WPA2-Enterprise is not a stronger cipher than WPA2-PSK. The difference is AUTHENTICATION (802.1X per user), not encryption.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. (Your graded 25-question quiz is in Canvas after Artifact 2.)</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering port security, DHCP snooping and DAI, wireless security, and threat recognition. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">Port security<b id="bdP">0/0</b></div>
+          <div class="cell">Snooping &amp; DAI<b id="bdS">0/0</b></div>
+          <div class="cell">Wireless<b id="bdW">0/0</b></div>
+          <div class="cell">Threats<b id="bdT">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you configure and verify these controls on real gear in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W3S9</span> and <span style="font-family:'IBM Plex Mono',monospace;">W3S10</span>. Then continue to Artifact 2 (VPNs, AAA &amp; QoS).</div>
+</div>
+
+<script>
+/* ================= VIEWS ================= */
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+/* ================= 1. DEFENSE CONSOLE ================= */
+const swBadge=document.getElementById('swBadge'), statusTok=document.getElementById('statusTok'), statusTxt=document.getElementById('statusTxt');
+let modeK='flood', solved=false;
+const SCN={
+ flood:{
+  tag:"SCENARIO 1 // CAM TABLE EXHAUSTION",
+  symptom:"An access port is receiving frames from a huge number of different source MAC addresses, far more than one PC could own. If the CAM table fills, the switch can no longer learn legitimate entries and begins forwarding inefficiently. <span class='hl'>Which control caps how many MAC addresses a port may use?</span>",
+  exam:"Exam angle: the symptom is many different SOURCE MACs on a single access port. The control is a MAC limit.",
+  correct:'dPs',
+  win:"<span class='hl'>Port security</span> on Fa0/10 limits the port to a set number of MAC addresses. Beyond the limit, the violation action fires and the CAM table is protected. Verified: the port enforces its maximum.",
+  winBadge:"MAX MACS ENFORCED",
+  wrong:{
+   dSnoop:"DHCP snooping inspects DHCP messages only. A flood of ordinary data frames with varied source MACs passes straight through it. The control that caps MAC addresses per port is port security.",
+   dDai:"DAI validates ARP packets. This condition is about CAM table capacity, not ARP. Port security is the control that limits MAC addresses on the port."
+  }
+ },
+ rogue:{
+  tag:"SCENARIO 2 // UNAUTHORIZED DHCP SERVER",
+  symptom:"Clients on the access VLAN are receiving DHCP leases with the wrong default gateway. A device other than the real server on Fa0/24 is answering DHCP requests. <span class='hl'>Which control ensures only the trusted uplink may send DHCP server messages?</span>",
+  exam:"Exam angle: wrong gateway handed out by DHCP points to an unauthorized DHCP responder. The control trusts only the real server's port.",
+  correct:'dSnoop',
+  win:"<span class='hl'>DHCP snooping</span> marks every port untrusted by default and drops server messages (OFFER, ACK) on untrusted ports. Fa0/24, the real uplink, is set trusted. Verified: only the legitimate server can offer leases, and the binding table now records each client.",
+  winBadge:"FA0/24 TRUSTED, REST FILTERED",
+  wrong:{
+   dPs:"Port security limits MAC addresses; it does not read DHCP message types, so it cannot tell a server reply from a client request. DHCP snooping is the control that filters by trust.",
+   dDai:"DAI validates ARP, not DHCP. It also depends on the snooping binding table existing first. Enable DHCP snooping to address a rogue DHCP responder."
+  }
+ },
+ arp:{
+  tag:"SCENARIO 3 // ARP POISONING",
+  symptom:"A host is sending unsolicited ARP replies that bind the gateway's IP to the wrong MAC address, corrupting other hosts' ARP caches. <span class='hl'>Which control validates every ARP reply against known good IP-to-MAC bindings?</span>",
+  exam:"Exam angle: forged ARP replies / gratuitous ARP binding an IP to a wrong MAC calls for DAI, which leans on the snooping binding table.",
+  correct:'dDai',
+  win:"<span class='hl'>Dynamic ARP Inspection</span> intercepts ARP packets on untrusted ports and checks each IP-to-MAC pairing against the DHCP snooping binding table. Mismatches are dropped. Verified: forged ARP replies no longer reach other hosts. (DAI requires DHCP snooping to be running first.)",
+  winBadge:"ARP VALIDATED VS BINDINGS",
+  wrong:{
+   dPs:"Port security limits MAC addresses but does not inspect ARP payloads, so a poisoned ARP reply from an allowed MAC still passes. DAI is the control that validates ARP.",
+   dSnoop:"DHCP snooping builds the binding table DAI needs, and it is the required first step, but on its own it does not inspect ARP packets. The ARP-validating control is DAI."
+  }
+ }
+};
+function aSay(tag,txt,exam){
+  document.getElementById('aTag').textContent=tag;
+  document.getElementById('aTxt').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('aExam').innerHTML=exam;
+  gsap.from('#viewLearn .infobar',{opacity:.6,duration:.3});
+}
+function loadScn(){
+  const S=SCN[modeK]; solved=false;
+  gsap.to(statusTok,{opacity:0,duration:.25});
+  document.getElementById('w2').style.stroke='#3D5178';
+  ['dPs','dSnoop','dDai'].forEach(id=>document.getElementById(id).disabled=false);
+  aSay(S.tag,S.symptom,S.exam);
+}
+function deploy(control){
+  const S=SCN[modeK];
+  if(solved)return;
+  if(control===S.correct){
+    solved=true;
+    ['dPs','dSnoop','dDai'].forEach(id=>document.getElementById(id).disabled=true);
+    statusTxt.textContent=S.winBadge.length>16?'SECURED':'SECURED';
+    swBadge.textContent=S.winBadge; gsap.to(swBadge,{opacity:1,duration:.4});
+    gsap.set(statusTok,{opacity:0}); gsap.to(statusTok,{opacity:1,duration:.45});
+    document.getElementById('w2').style.stroke='#2E8B57';
+    gsap.fromTo(statusTok,{scale:.6,transformOrigin:'center'},{scale:1,duration:.45,ease:'back.out(2)'});
+    aSay(S.tag+" // RESOLVED", S.win, S.exam);
+  }else{
+    gsap.fromTo('#viewLearn .panel',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});
+    aSay(S.tag+" // WRONG CONTROL", S.wrong[control], S.exam);
+  }
+}
+document.getElementById('dPs').onclick=()=>deploy('dPs');
+document.getElementById('dSnoop').onclick=()=>deploy('dSnoop');
+document.getElementById('dDai').onclick=()=>deploy('dDai');
+function modeUI(id){['mFlood','mRogue','mArp'].forEach(x=>document.getElementById(x).classList.remove('on'));
+  document.getElementById(id).classList.add('on');}
+document.getElementById('mFlood').onclick=()=>{modeK='flood';modeUI('mFlood');loadScn();};
+document.getElementById('mRogue').onclick=()=>{modeK='rogue';modeUI('mRogue');loadScn();};
+document.getElementById('mArp').onclick=()=>{modeK='arp';modeUI('mArp');loadScn();};
+loadScn();
+
+/* ================= 2. PORT SECURITY TOOLKIT ================= */
+const PS={
+ pr:{t:"PROTECT",x:"The quietest violation mode: frames from unknown MAC addresses are <span class='hl'>dropped silently</span>. No log, no counter, and the port stays up. You never learn it happened.",e:"Exam angle: protect does NOT log and does NOT shut the port. It is the one mode with no record."},
+ re:{t:"RESTRICT",x:"Drops frames from unknown MACs, but <span class='hl'>logs the event and increments the violation counter</span>. The port stays up. You get a record without an outage.",e:"Exam angle: restrict is the middle mode: it records (log + counter) but keeps the port forwarding."},
+ sh:{t:"SHUTDOWN (default)",x:"The default. A violation puts the port into <span class='hl'>err-disabled</span>: fully down until an admin runs shutdown, then no shutdown. Most secure, most disruptive.",e:"Exam angle: err-disabled + port-security in the config = a shutdown-mode violation. Recovery: shut, then no shut."},
+ st:{t:"STICKY",x:"Not a violation mode. <span class='hl'>switchport port-security mac-address sticky</span> makes dynamically learned MACs stick in the running config, so you do not type them by hand and they survive a save.",e:"Exam angle: sticky is about LEARNING and persistence, not about what happens on a violation. The exam pairs it against the three modes to see if you know the difference."},
+ bp:{t:"BPDU GUARD",x:"An STP edge protection, not strictly port security. On an access (PortFast) port, receiving any BPDU means something that should not send BPDUs (another switch) was plugged in: the port goes <span class='hl'>err-disabled</span>.",e:"Exam angle: BPDU Guard protects PortFast edge ports. A BPDU on an access port = unexpected switch = err-disabled."}
+};
+document.querySelectorAll('.chip[data-p]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-p]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const S=PS[c.dataset.p];
+    document.getElementById('pTag').textContent=S.t;
+    document.getElementById('pTxt').innerHTML=S.x;
+    document.getElementById('pExam').innerHTML=S.e;};
+});
+
+/* ================= 3. WIRELESS LADDER ================= */
+const WL={
+ wep:{t:"WEP // BROKEN, DO NOT USE",x:"The original 1999 scheme. Its RC4 implementation is <span class='hl'>trivially broken</span>: its key can be recovered in minutes. It exists on the exam only as the obviously wrong answer.",e:"Exam angle: WEP is never the right choice. If it is an option, it is a distractor."},
+ wpa:{t:"WPA // THE STOPGAP",x:"The interim fix after WEP, using TKIP. Better than WEP, but TKIP is now deprecated and also considered insecure.",e:"Exam angle: WPA with TKIP is legacy. The exam wants WPA2 or WPA3 for anything current."},
+ w2p:{t:"WPA2-PSK // THE SMALL-OFFICE STANDARD",x:"AES-CCMP encryption with one <span class='hl'>pre-shared key</span> for everyone. Strong crypto, weak key management: one departing employee means re-keying every device.",e:"Exam angle: PSK means personal / small office, one shared passphrase."},
+ w2e:{t:"WPA2-ENTERPRISE // PER-USER IDENTITY",x:"Same AES encryption as PSK, but authentication moves to <span class='hl'>802.1X with a RADIUS server</span>: every user has unique credentials. Revoke one account without touching anyone else.",e:"Exam angle: Enterprise differs from PSK in AUTHENTICATION (802.1X/RADIUS), not in the cipher."},
+ w3:{t:"WPA3 // THE CURRENT STANDARD",x:"Replaces the pre-shared-key handshake with <span class='hl'>SAE</span> (Simultaneous Authentication of Equals), which resists offline password guessing even when the passphrase is weak. Adds stronger encryption options.",e:"Exam angle: SAE / protection against offline dictionary attacks = WPA3. This is the headline improvement."}
+};
+document.querySelectorAll('.chip[data-w]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-w]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const S=WL[c.dataset.w];
+    document.getElementById('wTag').textContent=S.t;
+    document.getElementById('wTxt').innerHTML=S.x;
+    document.getElementById('wExam').innerHTML=S.e;};
+});
+
+/* ================= 4. DRILL ================= */
+const D_Q=[
+ {s:"An access port must allow only its one attached PC; any second MAC should drop the port entirely. Which configuration?",o:["port security, violation shutdown","port security, violation protect","DHCP snooping","BPDU Guard"],a:0,
+  e:"One MAC, hard stop on violation = port security with the default shutdown mode (err-disabled)."},
+ {s:"You want a violation to be logged and counted without ever taking the port down. Which mode?",o:["protect","restrict","shutdown","sticky"],a:1,
+  e:"Restrict is the only mode that records the event (log + counter) and keeps the port up."},
+ {s:"Clients are receiving leases with an incorrect default gateway from an unauthorized responder. Which control?",o:["port security","DHCP snooping","DAI","WPA3"],a:1,
+  e:"Snooping trusts only the real server's port and drops server messages elsewhere."},
+ {s:"Hosts' ARP caches are being corrupted by forged ARP replies. Which control validates ARP against known bindings?",o:["port security","DHCP snooping alone","Dynamic ARP Inspection","BPDU Guard"],a:2,
+  e:"DAI checks ARP against the snooping binding table. Snooping must run first to build that table."},
+ {s:"Before DAI can work, which feature must already be enabled to build the binding table?",o:["port security","DHCP snooping","NTP","SSH"],a:1,
+  e:"DAI depends on the DHCP snooping binding table. No snooping, no table, no DAI."},
+ {s:"You want learned MAC addresses to persist in the running configuration without typing them. Which option?",o:["violation protect","mac-address sticky","BPDU Guard","storm-control"],a:1,
+  e:"Sticky learning writes dynamically learned MACs into the running config."},
+ {s:"A guest wireless network for a small cafe needs one shared passphrase and strong encryption. Which option fits?",o:["WEP","WPA with TKIP","WPA2-PSK","open with a captive portal only"],a:2,
+  e:"WPA2-PSK: AES encryption, one shared key, the small-office standard."},
+ {s:"A company wants each employee to log in to Wi-Fi with unique credentials tied to a RADIUS server. Which option?",o:["WPA2-PSK","WPA2-Enterprise","WEP","WPA3-SAE personal"],a:1,
+  e:"Per-user credentials via 802.1X and RADIUS is WPA2-Enterprise."}
+];
+let dOrder=[], dI=0, dS=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function dRound(){
+  if(dI>=D_Q.length){
+    document.getElementById('dScen').textContent="Done.";
+    document.getElementById('dOpts').innerHTML='';
+    const f=document.getElementById('dFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${dS} / 8 `+(dS===8?"Access-layer defense locked in.":dS>=6?"Solid. Re-run the ones you missed.":"Re-read sections 1 and 2, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('dStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=dOrder[dI];
+  document.getElementById('dRound').textContent=dI+1;
+  document.getElementById('dScen').textContent=Q.s;
+  gsap.from('#dScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('dOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){dS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#dScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('dScore').textContent=dS;
+      document.getElementById('dScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; dI++; dRound();},2300);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('dStart').onclick=e=>{
+  dOrder=shuffle([...D_Q]); dI=0; dS=0;
+  document.getElementById('dScore').textContent="0";
+  document.getElementById('dFinal').style.display='none';
+  e.target.style.display='none'; dRound();
+};
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"P",stem:"A switch port configured with port security enters the err-disabled state after a violation. How is it recovered?",
+  o:["Reload the switch","shutdown, then no shutdown on the interface","clear mac address-table","It recovers automatically after 30 seconds"],a:1,
+  e:"Err-disabled from a shutdown-mode violation is cleared by bouncing the port: shutdown, then no shutdown (or errdisable recovery)."},
+ {t:"P",stem:"Which port security violation mode drops offending frames, logs the event, and keeps the port up?",
+  o:["protect","restrict","shutdown","sticky"],a:1,
+  e:"Restrict records the event (log and counter) without disabling the port. Protect is silent; shutdown disables."},
+ {t:"P",stem:"What does switchport port-security mac-address sticky accomplish?",
+  o:["It sets the violation mode to shutdown","It makes dynamically learned MAC addresses persist in the running config","It enables BPDU Guard","It trusts the port for DHCP"],a:1,
+  e:"Sticky learning writes learned MACs into the running configuration so they are not lost and need not be typed."},
+ {t:"S",stem:"By default, how does DHCP snooping treat a switch port?",
+  o:["Trusted","Untrusted","Err-disabled","Shutdown"],a:1,
+  e:"Every port is untrusted until explicitly trusted. Server-only messages on untrusted ports are dropped."},
+ {t:"S",stem:"After enabling DHCP snooping, clients on every port stop receiving leases. What is the most likely cause?",
+  o:["The DHCP pool is empty","The uplink toward the real server was never set to trusted","Port security is blocking the server","The VLAN is shut down"],a:1,
+  e:"Server messages on the uplink are being dropped because that port is still untrusted. Mark it with ip dhcp snooping trust."},
+ {t:"S",stem:"What information does the DHCP snooping binding table record?",
+  o:["Only MAC addresses","IP address, MAC address, port, and VLAN for each lease","Routing table entries","ARP timers"],a:1,
+  e:"The binding table maps IP to MAC to port to VLAN, and DAI relies on it."},
+ {t:"S",stem:"Dynamic ARP Inspection validates ARP packets against which data source?",
+  o:["The CAM table","The routing table","The DHCP snooping binding table","The running configuration"],a:2,
+  e:"DAI checks each ARP packet's IP-to-MAC pairing against the snooping binding table, which is why snooping is a prerequisite."},
+ {t:"W",stem:"A small office needs wireless with strong encryption and a single shared passphrase. Which option is appropriate?",
+  o:["WEP","WPA2-PSK","Open authentication","WPA with TKIP"],a:1,
+  e:"WPA2-PSK gives AES encryption with one shared key, the small-office standard."},
+ {t:"W",stem:"What is the primary difference between WPA2-Personal and WPA2-Enterprise?",
+  o:["Enterprise uses a stronger cipher","Enterprise authenticates each user via 802.1X and RADIUS","Personal supports more devices","Enterprise disables encryption"],a:1,
+  e:"Both use AES. Enterprise replaces the shared key with per-user 802.1X authentication against a RADIUS server."},
+ {t:"W",stem:"Which wireless standard introduced SAE to resist offline password-guessing attacks?",
+  o:["WEP","WPA","WPA2","WPA3"],a:3,
+  e:"WPA3 replaced the pre-shared-key handshake with SAE, hardening weak passphrases against offline attacks."}
+];
+const TOPICS={P:"PORT SECURITY",S:"SNOOPING & DAI",W:"WIRELESS",T:"THREATS"};
+let qOrder=[], qi=0, qScore=0, per={P:[0,0],S:[0,0],W:[0,0],T:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdP').textContent=per.P[0]+"/"+per.P[1];
+  document.getElementById('bdS').textContent=per.S[0]+"/"+per.S[1];
+  document.getElementById('bdW').textContent=per.W[0]+"/"+per.W[1];
+  document.getElementById('bdT').textContent=per.T[0]+"/"+per.T[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on access-layer defense. Move to Artifact 2 (VPNs, AAA &amp; QoS), then take the graded quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: resolve all three defense scenarios, click every violation mode and wireless rung, finish the drill at 8/8, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={P:[0,0],S:[0,0],W:[0,0],T:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={P:[0,0],S:[0,0],W:[0,0],T:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>

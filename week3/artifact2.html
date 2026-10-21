@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 3 &bull; VPNs, AAA &amp; QoS</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .panel svg{width:100%; height:auto; display:block;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden; margin-left:auto;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12.5px; padding:8px 16px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;}
+  .chip{font-family:'Chakra Petch',sans-serif; font-size:13px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:24px; padding:9px 18px; cursor:pointer;}
+  .chip.on{border-color:var(--gold); background:#2D4372;}
+  .queuewrap{display:flex; flex-direction:column; gap:10px;}
+  .qlane{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:10px 14px;}
+  .qlane .lbl{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--sky); margin-bottom:6px;}
+  .qtrack{position:relative; height:34px; background:#15213C; border-radius:8px; overflow:hidden;}
+  .qpkt{position:absolute; top:5px; height:24px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; color:#1B2A4A;}
+  .qpkt.voice{background:#C9A227;} .qpkt.data{background:#6EB5DC;}
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 3 // ARTIFACT 2 of 2</div>
+    <h1>VPNs, AAA &amp; QoS</h1>
+    <p>Three ideas that finish the security picture: how VPNs carry private traffic over a public internet, how AAA controls who may do what, and how QoS keeps a voice call clear while a backup saturates the link. Learn each one hands-on, then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. VPN explorer</h2>
+    <div class="sub">A VPN builds an encrypted tunnel across the public internet. Click each term, then compare site-to-site against remote access.</div>
+    <div class="panel">
+      <svg viewBox="0 0 1000 200" xmlns="http://www.w3.org/2000/svg" aria-label="Two sites connected by an encrypted tunnel across the internet">
+        <g><rect x="40" y="70" width="120" height="60" rx="8" fill="#24365E" stroke="#6EB5DC" stroke-width="1.5"/>
+          <text x="100" y="96" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">SITE A</text>
+          <text x="100" y="114" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">10.1.0.0/16</text></g>
+        <g><rect x="840" y="70" width="120" height="60" rx="8" fill="#24365E" stroke="#6EB5DC" stroke-width="1.5"/>
+          <text x="900" y="96" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">SITE B</text>
+          <text x="900" y="114" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">10.2.0.0/16</text></g>
+        <ellipse cx="500" cy="100" rx="150" ry="52" fill="#3D5178"/>
+        <text x="500" y="88" text-anchor="middle" style="font-family:'Chakra Petch',sans-serif;font-size:13px;" fill="#fff">PUBLIC INTERNET</text>
+        <text x="500" y="108" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:10px;" fill="#9CCDE8">untrusted, anyone can see traffic</text>
+        <rect id="tunnel" x="165" y="92" width="670" height="16" rx="8" fill="none" stroke="#C9A227" stroke-width="3" stroke-dasharray="10 6" opacity="0.5"/>
+        <text x="500" y="146" text-anchor="middle" style="font-family:'IBM Plex Mono',monospace;font-size:11px;" fill="#C9A227">&#128274; encrypted IPsec tunnel</text>
+      </svg>
+      <div class="chips" style="margin-top:14px;">
+        <button class="chip on" data-v="s2s">SITE-TO-SITE</button>
+        <button class="chip" data-v="ra">REMOTE ACCESS</button>
+        <button class="chip" data-v="ipsec">IPSEC</button>
+        <button class="chip" data-v="conf">CONFIDENTIALITY</button>
+        <button class="chip" data-v="integ">INTEGRITY</button>
+      </div>
+      <div class="infobar"><span class="tag" id="vTag">SITE-TO-SITE VPN</span><span id="vTxt">Two routers (or firewalls) build a permanent tunnel between whole networks. Users at each site never know it exists: the gateways do all the encryption. This is how a branch office reaches headquarters over the internet.</span><span class="exam" id="vExam">Exam angle: site-to-site = gateway to gateway, always on, transparent to users. Remote access = one user's device to the gateway, on demand.</span></div>
+    </div>
+
+    <h2>2. The AAA sorter</h2>
+    <div class="sub">AAA has three A's that students constantly blur. Click each, then run the sorter: eight actions, you decide which A each one is.</div>
+    <div class="panel">
+      <div class="chips">
+        <button class="chip on" data-a="au">AUTHENTICATION</button>
+        <button class="chip" data-a="az">AUTHORIZATION</button>
+        <button class="chip" data-a="ac">ACCOUNTING</button>
+      </div>
+      <div class="infobar"><span class="tag" id="aaTag">AUTHENTICATION // WHO ARE YOU?</span><span id="aaTxt">Proving identity: a username and password, a token, a certificate. The gate that confirms you are who you claim to be, before anything else happens.</span><span class="exam" id="aaExam">Exam angle: authentication = identity. The order is always A-then-A-then-A: prove, then permit, then log.</span></div>
+      <div class="drill" style="margin-top:14px;">
+        <div class="scen" id="aScen" style="color:#1B2A4A;">Eight actions. For each, choose which A it belongs to.</div>
+        <div class="opts" id="aOpts"></div>
+        <div class="meta"><span>Round <b id="aRound">0</b>/8</span><span>Score <b id="aScore">0</b></span></div>
+        <button class="btn gold" id="aStart" style="margin-top:14px;">START SORTER</button>
+        <div class="final" id="aFinal"></div>
+      </div>
+    </div>
+
+    <h2>3. The QoS congestion lab</h2>
+    <div class="sub">One link, a voice call and a big file transfer competing for it. Run it without QoS, then with QoS, and watch what happens to the voice packets.</div>
+    <div class="panel">
+      <div class="queuewrap">
+        <div class="qlane">
+          <div class="lbl">VOICE (needs low, steady latency)</div>
+          <div class="qtrack" id="trackVoice"></div>
+        </div>
+        <div class="qlane">
+          <div class="lbl">BULK DATA (a backup transfer, bursty)</div>
+          <div class="qtrack" id="trackData"></div>
+        </div>
+      </div>
+      <div class="infobar"><span class="tag" id="qTagLab">READY</span><span id="qTxtLab">Press RUN WITHOUT QoS first. The link treats every packet equally (first in, first out), so voice waits behind the backup. Then run it with QoS and compare.</span><span class="exam" id="qExamLab">Exam angle: without QoS the queue is FIFO. QoS classifies, marks (voice as EF / DSCP 46), and schedules so delay-sensitive traffic jumps the line.</span></div>
+      <div class="btns">
+        <button class="btn ghost" id="runNoqos">RUN WITHOUT QoS</button>
+        <button class="btn gold" id="runQos">RUN WITH QoS</button>
+        <button class="btn ghost" id="qResetLab">RESET &#8634;</button>
+      </div>
+    </div>
+
+    <h2>4. Finish-the-picture drill</h2>
+    <div class="sub">Six scenarios across VPNs, AAA, and QoS. Pick the right concept.</div>
+    <div class="drill">
+      <div class="scen" id="dScen">Six rounds tying the week's three topics together.</div>
+      <div class="opts" id="dOpts"></div>
+      <div class="meta"><span>Round <b id="dRound">0</b>/6</span><span>Score <b id="dScore">0</b></span></div>
+      <button class="btn gold" id="dStart" style="margin-top:16px;">START</button>
+      <div class="final" id="dFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">These three topics each have a reliable question pattern.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: which VPN type?</h3>
+      <p><code>branch office permanently connected to HQ</code> or <code>gateway to gateway</code> means <strong>site-to-site</strong>. <code>a traveling employee's laptop connecting on demand</code> means <strong>remote access</strong> (SSL/TLS or client-based). Both use IPsec concepts; the difference is who builds the tunnel and when.</p>
+      <span class="trap">Trap: "transparent to end users" always means site-to-site. Remote access requires the user to start the connection.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: the two security guarantees</h3>
+      <p>A VPN provides <strong>confidentiality</strong> (encryption hides the data) and <strong>integrity</strong> (hashing proves it was not altered), plus authentication of the peers. Keep them straight: confidentiality is secrecy, integrity is tamper-evidence.</p>
+      <span class="trap">Trap: "which service guarantees the data was not modified?" is integrity (a hash), not confidentiality (encryption).</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: the three A's, in order</h3>
+      <p><code>who are you</code> is <strong>authentication</strong>. <code>what are you allowed to do</code> is <strong>authorization</strong>. <code>what did you do</code> is <strong>accounting</strong>. The order never changes: prove, permit, log. RADIUS and TACACS+ are the servers that provide AAA centrally.</p>
+      <span class="trap">Trap: authorization vs authentication. "The user logged in but cannot run a command" is an authorization problem, not an authentication one.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: QoS vocabulary</h3>
+      <p><strong>Classification</strong> identifies traffic, <strong>marking</strong> tags it (voice as EF, DSCP 46), and <strong>queuing/scheduling</strong> decides who goes first. Voice cares about <strong>low latency and low jitter</strong>; it would rather lose a packet than wait. Default behavior with no QoS is FIFO: first in, first out.</p>
+      <span class="trap">Trap: "voice needs high bandwidth" is the weak answer. Voice needs LOW, PREDICTABLE delay far more than raw bandwidth.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. Then take the graded 25-question Week 3 quiz in Canvas.</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering VPN types and services, AAA, and QoS. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">VPNs<b id="bdV">0/0</b></div>
+          <div class="cell">AAA<b id="bdA">0/0</b></div>
+          <div class="cell">QoS<b id="bdQ">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you configure AAA and observe QoS behavior in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W3S11</span> and <span style="font-family:'IBM Plex Mono',monospace;">W3S12</span>. Then take the <strong>Week 3 quiz in Canvas</strong> (25 questions, covers both artifacts).</div>
+</div>
+
+<script>
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+const VPN={
+ s2s:{t:"SITE-TO-SITE VPN",x:"Two routers (or firewalls) build a permanent tunnel between whole networks. Users at each site never know it exists: the gateways do all the encryption. This is how a branch office reaches headquarters over the internet.",e:"Exam angle: site-to-site = gateway to gateway, always on, transparent to users."},
+ ra:{t:"REMOTE ACCESS VPN",x:"A single user's device builds a tunnel to the corporate gateway <span class='hl'>on demand</span>, usually with a VPN client or a browser (SSL/TLS). The traveling employee starts it; it comes down when they disconnect.",e:"Exam angle: remote access = one endpoint device to the gateway, user-initiated. The teleworker scenario."},
+ ipsec:{t:"IPSEC",x:"The framework that secures site-to-site tunnels: it handles key exchange, <span class='hl'>encryption, and integrity</span> for IP traffic. It is a suite of protocols, not a single one.",e:"Exam angle: IPsec is the classic site-to-site technology. SSL/TLS is more common for remote access."},
+ conf:{t:"CONFIDENTIALITY",x:"<span class='hl'>Encryption</span> scrambles the data so anyone capturing it on the public internet sees only ciphertext. This is secrecy.",e:"Exam angle: confidentiality = encryption = nobody can READ it."},
+ integ:{t:"INTEGRITY",x:"A <span class='hl'>hash</span> travels with the data so the far end can prove it arrived unaltered. If one bit changed in transit, the hash fails and the packet is rejected. This is tamper-evidence.",e:"Exam angle: integrity = hashing = nobody could CHANGE it undetected. Do not confuse it with confidentiality."}
+};
+document.querySelectorAll('.chip[data-v]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-v]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const S=VPN[c.dataset.v];
+    document.getElementById('vTag').textContent=S.t;
+    document.getElementById('vTxt').innerHTML=S.x;
+    document.getElementById('vExam').innerHTML=S.e;
+    gsap.fromTo('#tunnel',{opacity:.5},{opacity:1,duration:.5,yoyo:true,repeat:1});};
+});
+
+const AAA={
+ au:{t:"AUTHENTICATION // WHO ARE YOU?",x:"Proving identity: a username and password, a token, a certificate. The gate that confirms you are who you claim to be, before anything else happens.",e:"Exam angle: authentication = identity. Always first."},
+ az:{t:"AUTHORIZATION // WHAT MAY YOU DO?",x:"Once identity is proven, authorization decides <span class='hl'>which commands and resources</span> you may use. A read-only operator and a level 15 admin authenticate the same way but are authorized very differently.",e:"Exam angle: 'logged in but cannot run the command' is an authorization problem, not authentication."},
+ ac:{t:"ACCOUNTING // WHAT DID YOU DO?",x:"The audit trail: accounting records <span class='hl'>what each identity actually did</span>, when, and for how long. This is the log that answers 'who changed this?' after an incident.",e:"Exam angle: accounting = logging/audit of actions. The third A, and the one students forget."}
+};
+document.querySelectorAll('.chip[data-a]').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip[data-a]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+    const S=AAA[c.dataset.a];
+    document.getElementById('aaTag').textContent=S.t;
+    document.getElementById('aaTxt').innerHTML=S.x;
+    document.getElementById('aaExam').innerHTML=S.e;};
+});
+const AA_OPTS=["Authentication","Authorization","Accounting"];
+const AA_Q=[
+ {s:"A user types a username and password at the SSH login prompt.",a:"Authentication",e:"Proving identity = authentication, the first A."},
+ {s:"The system records that admin ran 'reload' at 14:32 for the audit log.",a:"Accounting",e:"Logging what was done = accounting."},
+ {s:"A junior tech logs in successfully but is blocked from entering configuration mode.",a:"Authorization",e:"Identity was proven; the restriction on what they may do is authorization."},
+ {s:"A certificate is checked to confirm a device is the genuine corporate laptop.",a:"Authentication",e:"Confirming identity, even by certificate, is authentication."},
+ {s:"A RADIUS server tracks how long each user's session lasted for billing.",a:"Accounting",e:"Session duration and resource use = accounting."},
+ {s:"Policy grants the network team read-write but gives interns read-only.",a:"Authorization",e:"Deciding privilege levels per identity = authorization."},
+ {s:"A one-time token from an app is entered to complete login.",a:"Authentication",e:"A second identity factor is still authentication."},
+ {s:"Command history per administrator is exported to the SIEM for review.",a:"Accounting",e:"The record of actions taken = accounting."}
+];
+let aOrder=[], aI=0, aS=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function aRound(){
+  if(aI>=AA_Q.length){
+    document.getElementById('aScen').textContent="Done.";
+    document.getElementById('aOpts').innerHTML='';
+    const f=document.getElementById('aFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${aS} / 8 `+(aS===8?"The three A's are yours.":aS>=6?"Close. Re-click the three terms and retake.":"Re-read the three A's, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('aStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=aOrder[aI];
+  document.getElementById('aRound').textContent=aI+1;
+  document.getElementById('aScen').textContent=Q.s;
+  gsap.from('#aScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('aOpts'); box.innerHTML='';
+  AA_OPTS.forEach(o=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(o===Q.a){aS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); [...box.children].find(x=>x.textContent===Q.a).classList.add('correct');
+        gsap.fromTo('#aScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('aScore').textContent=aS;
+      document.getElementById('aScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; aI++; aRound();},1900);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('aStart').onclick=e=>{
+  aOrder=shuffle([...AA_Q]); aI=0; aS=0;
+  document.getElementById('aScore').textContent="0";
+  document.getElementById('aFinal').style.display='none';
+  e.target.style.display='none'; aRound();
+};
+
+const trackVoice=document.getElementById('trackVoice'), trackData=document.getElementById('trackData');
+let qlabBusy=false;
+function qSay(tag,txt,exam){
+  document.getElementById('qTagLab').textContent=tag;
+  document.getElementById('qTxtLab').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('qExamLab').innerHTML=exam;
+}
+function clearTracks(){trackVoice.innerHTML=''; trackData.innerHTML='';}
+function mkPkt(track,cls,label){
+  const d=document.createElement('div'); d.className='qpkt '+cls; d.textContent=label;
+  d.style.left='-14%'; d.style.width='13%';
+  track.appendChild(d); return d;
+}
+function runNoQos(){
+  if(qlabBusy)return; qlabBusy=true; clearTracks();
+  qSay('WITHOUT QoS // FIFO','Every packet is equal. The bursty backup fills the queue, and each voice packet waits its turn behind a wall of data. Watch the voice packets arrive late and unevenly.','');
+  const tl=gsap.timeline({onComplete:()=>{qlabBusy=false;
+    qSay('WITHOUT QoS // RESULT','The voice packets crossed with <span class="hl">uneven gaps (jitter)</span> and extra delay, because they queued behind the backup. On a real call this is choppy, robotic audio.',
+    'Exam angle: FIFO treats all traffic equally. Delay-sensitive voice suffers whenever a bulk transfer shares the link.');}});
+  for(let i=0;i<5;i++){ const d=mkPkt(trackData,'data','DATA'); tl.to(d,{left:'100%',duration:1.0,ease:'none'},i*0.25); }
+  const vdelays=[0.4,1.3,2.1,3.2,4.0];
+  vdelays.forEach((dl,i)=>{ const v=mkPkt(trackVoice,'voice','V'+(i+1)); tl.to(v,{left:'100%',duration:1.3,ease:'none'},dl); });
+}
+function runQos(){
+  if(qlabBusy)return; qlabBusy=true; clearTracks();
+  qSay('WITH QoS // VOICE PRIORITIZED','Now the router classifies voice (marked EF / DSCP 46) and schedules it ahead of the backup. Watch the voice packets cross on a steady beat while data fills the gaps.','');
+  const tl=gsap.timeline({onComplete:()=>{qlabBusy=false;
+    qSay('WITH QoS // RESULT','The voice packets crossed at a <span class="hl">steady, even cadence (low jitter, low latency)</span>. The backup still completes, just slightly slower, using the capacity voice did not need.',
+    'Exam angle: classify, mark (EF/DSCP 46 for voice), then schedule. Priority queuing gives voice a predictable, low delay.');}});
+  for(let i=0;i<5;i++){ const v=mkPkt(trackVoice,'voice','V'+(i+1)); tl.to(v,{left:'100%',duration:0.9,ease:'none'},i*0.7); }
+  for(let i=0;i<5;i++){ const d=mkPkt(trackData,'data','DATA'); tl.to(d,{left:'100%',duration:1.1,ease:'none'},0.35+i*0.7); }
+}
+document.getElementById('runNoqos').onclick=runNoQos;
+document.getElementById('runQos').onclick=runQos;
+document.getElementById('qResetLab').onclick=()=>{if(qlabBusy)return; clearTracks();
+  qSay('READY','Press RUN WITHOUT QoS first. The link treats every packet equally (first in, first out), so voice waits behind the backup. Then run it with QoS and compare.','Exam angle: without QoS the queue is FIFO. QoS classifies, marks (voice as EF / DSCP 46), and schedules so delay-sensitive traffic jumps the line.');};
+
+const D_Q=[
+ {s:"A branch office needs a permanent, encrypted connection to headquarters over the internet, invisible to users. Which solution?",o:["Remote access VPN","Site-to-site VPN","A longer ACL","Port security"],a:1,
+  e:"Gateway to gateway, always on, transparent to users = site-to-site VPN."},
+ {s:"A traveling salesperson must connect securely to the corporate network from a hotel, on demand. Which solution?",o:["Site-to-site VPN","Remote access VPN","DHCP snooping","QoS"],a:1,
+  e:"One user's device to the gateway, user-initiated = remote access VPN."},
+ {s:"Which VPN security service ensures captured traffic cannot be read?",o:["Integrity","Confidentiality","Accounting","Authorization"],a:1,
+  e:"Encryption providing secrecy = confidentiality."},
+ {s:"A user authenticates successfully but is denied entry to configuration mode. Which AAA function is responsible?",o:["Authentication","Authorization","Accounting","Encryption"],a:1,
+  e:"Identity was proven; the limit on what they may do is authorization."},
+ {s:"A voice call sounds choppy whenever the nightly backup runs on the same link. Which technology addresses this?",o:["A VPN","QoS prioritization of voice","Port security","DHCP snooping"],a:1,
+  e:"QoS classifies and schedules voice ahead of bulk data so it keeps low, steady latency."},
+ {s:"Which statement about voice traffic requirements is most accurate?",o:["Voice needs very high bandwidth above all","Voice needs low, predictable latency and low jitter","Voice needs guaranteed retransmission","Voice needs encryption to function"],a:1,
+  e:"Voice is delay-sensitive: low latency and low jitter matter far more than raw bandwidth."}
+];
+let dOrder=[], dI=0, dS=0;
+function dRound(){
+  if(dI>=D_Q.length){
+    document.getElementById('dScen').textContent="Done.";
+    document.getElementById('dOpts').innerHTML='';
+    const f=document.getElementById('dFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${dS} / 6 `+(dS===6?"The picture is complete.":dS>=4?"Close. Re-run the ones you missed.":"Re-read the three sections, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('dStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=dOrder[dI];
+  document.getElementById('dRound').textContent=dI+1;
+  document.getElementById('dScen').textContent=Q.s;
+  gsap.from('#dScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('dOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){dS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#dScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('dScore').textContent=dS;
+      document.getElementById('dScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; dI++; dRound();},2200);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('dStart').onclick=e=>{
+  dOrder=shuffle([...D_Q]); dI=0; dS=0;
+  document.getElementById('dScore').textContent="0";
+  document.getElementById('dFinal').style.display='none';
+  e.target.style.display='none'; dRound();
+};
+
+const QB=[
+ {t:"V",stem:"Which VPN type connects two entire networks through gateways, with the tunnel transparent to end users?",
+  o:["Remote access VPN","Site-to-site VPN","Clientless SSL VPN","Split-tunnel VPN"],a:1,
+  e:"Gateway to gateway, always on, invisible to users = site-to-site."},
+ {t:"V",stem:"A remote worker launches a client to reach the corporate network from home. This is best described as:",
+  o:["A site-to-site VPN","A remote access VPN","An ACL","A trunk"],a:1,
+  e:"One endpoint device to the gateway, started by the user, is remote access."},
+ {t:"V",stem:"Which VPN security service uses a hash to prove that data was not altered in transit?",
+  o:["Confidentiality","Integrity","Authorization","Accounting"],a:1,
+  e:"Integrity is tamper-evidence via hashing. Confidentiality is secrecy via encryption."},
+ {t:"V",stem:"Which framework is most associated with securing site-to-site VPN tunnels?",
+  o:["IPsec","HTTP","SNMP","STP"],a:0,
+  e:"IPsec handles key exchange, encryption, and integrity for site-to-site tunnels."},
+ {t:"A",stem:"In AAA, which function proves the identity of a user before access is granted?",
+  o:["Authentication","Authorization","Accounting","Auditing"],a:0,
+  e:"Authentication confirms identity and always comes first."},
+ {t:"A",stem:"A technician logs in successfully but cannot execute privileged commands. Which AAA function is limiting them?",
+  o:["Authentication","Authorization","Accounting","Encryption"],a:1,
+  e:"Authorization governs which commands and resources an identity may use."},
+ {t:"A",stem:"Which AAA function produces the audit trail of what each user did and for how long?",
+  o:["Authentication","Authorization","Accounting","Association"],a:2,
+  e:"Accounting records actions and session details, the basis of an audit trail."},
+ {t:"Q",stem:"With no QoS configured, how does a router treat packets in its queue?",
+  o:["Voice first always","First in, first out (FIFO)","Largest packet first","Random early drop only"],a:1,
+  e:"Default behavior is FIFO: no traffic is favored, so delay-sensitive voice can be stuck behind bulk data."},
+ {t:"Q",stem:"Which QoS step tags a voice packet so downstream devices know to prioritize it?",
+  o:["Classification","Marking","Queuing","Policing"],a:1,
+  e:"Marking sets a value (voice as EF / DSCP 46). Classification identifies traffic; queuing schedules it."},
+ {t:"Q",stem:"What does voice traffic need most from the network?",
+  o:["Maximum bandwidth","Guaranteed retransmission","Low and predictable latency with low jitter","The largest MTU"],a:2,
+  e:"Voice is delay-sensitive: steady low latency and low jitter matter more than raw bandwidth, and late packets are worse than lost ones."}
+];
+const TOPICS={V:"VPNs",A:"AAA",Q:"QoS"};
+let qOrder=[], qi=0, qScore=0, per={V:[0,0],A:[0,0],Q:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdV').textContent=per.V[0]+"/"+per.V[1];
+  document.getElementById('bdA').textContent=per.A[0]+"/"+per.A[1];
+  document.getElementById('bdQ').textContent=per.Q[0]+"/"+per.Q[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on this material. Take the graded 25-question Week 3 quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: click every VPN and AAA term, run the QoS lab both ways, finish both drills, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={V:[0,0],A:[0,0],Q:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={V:[0,0],A:[0,0],Q:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>
