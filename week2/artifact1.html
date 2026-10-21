@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 2 &bull; Access Control Lists</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .mode{display:flex; border:2px solid #3D5178; border-radius:24px; overflow:hidden; margin-left:auto;}
+  .mode button{background:transparent; color:#9CCDE8; border:none; font-family:'Chakra Petch',sans-serif; font-size:12.5px; padding:8px 16px; cursor:pointer;}
+  .mode button.on{background:#3D5178; color:#fff;}
+  .view{display:none;} .view.on{display:block;}
+  /* ACL engine */
+  .aclhead{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sky); margin-bottom:8px;}
+  .aclbox{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:12px 14px;}
+  .cline{display:flex; align-items:center; gap:12px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#fff; padding:9px 10px; border-radius:7px; border:2px solid transparent; margin-bottom:4px; transition:opacity .3s;}
+  .cline .ln{background:#22345C; color:var(--sky); border-radius:12px; font-size:10.5px; padding:2px 10px; min-width:42px; text-align:center;}
+  .cline.cur{border-color:var(--gold); background:#1A2C52;}
+  .cline.pass{opacity:.38;}
+  .cline.hitP{background:#17402B; border-color:#2E8B57;}
+  .cline.hitD{background:#4A1F1A; border-color:#C0392B;}
+  .cline.implicit{border-style:dashed; border-color:#5A2B24; color:#C98A80;}
+  .cline.implicit .ln{background:#3A1F1B; color:#C98A80;}
+  .pkts{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px;}
+  .pktbtn{font-family:'IBM Plex Mono',monospace; font-size:12px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:12px; padding:9px 14px; cursor:pointer; text-align:left; line-height:1.5;}
+  .pktbtn b{display:block; font-family:'Chakra Petch',sans-serif; font-size:13px; color:var(--sky);}
+  .pktbtn.on{border-color:var(--gold); background:#2D4372;}
+  /* wildcard chips */
+  .chips{display:flex; flex-wrap:wrap; gap:10px; margin-top:4px;}
+  .chip{font-family:'IBM Plex Mono',monospace; font-size:13px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:24px; padding:9px 18px; cursor:pointer;}
+  .chip.on{border-color:var(--gold); background:#2D4372;}
+  /* drill */
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  /* test prep */
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 2 // ARTIFACT 1 of 2</div>
+    <h1>Access Control Lists</h1>
+    <p>An ACL is a bouncer with a clipboard: every packet gets checked against the list, top to bottom, and the first matching line decides its fate. Run packets through the engine yourself, decode wildcard masks, then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. The ACL engine</h2>
+    <div class="sub">Pick a packet, then press CHECK NEXT LINE and watch the router walk the list. First match wins; nothing matching falls into the invisible implicit deny. Switch between the standard and extended scenarios.</div>
+    <div class="panel">
+      <div class="aclhead" id="aclTitle"></div>
+      <div class="aclbox" id="aclBox"></div>
+      <div class="pkts" id="pktRow"></div>
+      <div class="infobar"><span class="tag" id="eTag">PICK A PACKET</span><span id="eTxt">Choose one of the test packets below the list, then step it through the ACL one line at a time.</span><span class="exam" id="eExam">Exam angle: ACL processing is sequential and stops at the first match. Everything else about ACLs builds on that one sentence.</span></div>
+      <div class="btns">
+        <button class="btn gold" id="stepBtn" disabled>CHECK NEXT LINE &#9654;</button>
+        <button class="btn ghost" id="eReset">RESET &#8634;</button>
+        <div class="mode">
+          <button id="mStd" class="on">STANDARD</button>
+          <button id="mExt">EXTENDED</button>
+        </div>
+      </div>
+    </div>
+
+    <h2>2. The wildcard decoder</h2>
+    <div class="sub">Wildcard masks are the inverse of subnet masks: 0 means "must match", 1 means "ignore this bit". Click each mask and lock in what it selects.</div>
+    <div class="panel">
+      <div class="chips">
+        <button class="chip on" data-w="h">0.0.0.0</button>
+        <button class="chip" data-w="q">0.0.0.255</button>
+        <button class="chip" data-w="s">0.0.0.63</button>
+        <button class="chip" data-w="b">0.0.3.255</button>
+        <button class="chip" data-w="a">255.255.255.255</button>
+      </div>
+      <div class="infobar"><span class="tag" id="wTag">0.0.0.0 // EXACT HOST</span><span id="wTxt">Every bit is 0: <span class="hl">every bit must match</span>. Pairs with one address to select exactly one host. The keyword <span class="hl">host 10.1.1.1</span> is shorthand for 10.1.1.1 0.0.0.0.</span><span class="exam" id="wExam">Exam angle: the shortcut formula is 255.255.255.255 minus the subnet mask. A /24 mask of 255.255.255.0 gives wildcard 0.0.0.255.</span></div>
+    </div>
+
+    <h2>3. Rules and placement drill</h2>
+    <div class="sub">Eight rounds covering wildcard math, placement strategy, and the processing rules you just watched. These exact decisions appear on the exam.</div>
+    <div class="drill">
+      <div class="scen" id="dScen">Eight rounds. Wildcards, placement, and ACL logic.</div>
+      <div class="opts" id="dOpts"></div>
+      <div class="meta"><span>Round <b id="dRound">0</b>/8</span><span>Score <b id="dScore">0</b></span></div>
+      <button class="btn gold" id="dStart" style="margin-top:16px;">START</button>
+      <div class="final" id="dFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">ACL questions follow four reliable patterns. Learn to recognize them on sight.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: first match wins, and the invisible last line</h3>
+      <p>Processing is strictly top to bottom, and it <strong>stops at the first match</strong>. Any packet that reaches the end unmatched hits the <code>implicit deny any</code> that every ACL silently carries. A deny entry placed BELOW a permit that already matches the same traffic never fires.</p>
+      <span class="trap">Trap: "the ACL has only permit statements, so why is some traffic dropped?" The implicit deny at the end drops everything unmatched.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: wildcard mask math</h3>
+      <p>Wildcard = <code>255.255.255.255 minus the subnet mask</code>. So /24 gives 0.0.0.255, /26 gives 0.0.0.63, /22 gives 0.0.3.255. Zero bits must match; one bits are ignored. <code>host</code> equals wildcard 0.0.0.0, and <code>any</code> equals 0.0.0.0 255.255.255.255.</p>
+      <span class="trap">Trap: subnet masks offered where a wildcard belongs. If an ACL option shows 255.255.255.0 as the mask for a /24, it is wrong: ACLs take 0.0.0.255.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: placement strategy</h3>
+      <p>Standard ACLs (1-99) see <strong>only the source</strong>, so they go <strong>close to the destination</strong>: placed near the source they would kill traffic to everywhere. Extended ACLs (100-199) match source, destination, protocol, and port, so they go <strong>close to the source</strong> and drop unwanted traffic before it crosses the network.</p>
+      <span class="trap">Trap: the reversed pairing. "Standard near source" and "extended near destination" are the planted wrong answers.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: applying the list, two different commands</h3>
+      <p>On an interface: <code>ip access-group 110 in</code> (or out). On the vty lines, protecting access to the device itself: <code>access-class 10 in</code>. Named ACLs are edited by <strong>sequence number</strong>, which is why modern configs prefer them.</p>
+      <span class="trap">Trap: ip access-group on the vty lines, or access-class on an interface. Each command belongs to exactly one place.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. (Your graded 25-question quiz is in Canvas after Artifact 2.)</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering ACL logic, wildcards, placement, and configuration. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">ACL logic<b id="bdL">0/0</b></div>
+          <div class="cell">Wildcards<b id="bdW">0/0</b></div>
+          <div class="cell">Placement<b id="bdP">0/0</b></div>
+          <div class="cell">Configuration<b id="bdC">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you build and troubleshoot these exact lists in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W2S5</span> and <span style="font-family:'IBM Plex Mono',monospace;">W2S6</span>: standard, extended, and named ACLs with placement and vty protection. Then continue to Artifact 2 (Device Hardening).</div>
+</div>
+
+<script>
+/* ================= VIEWS ================= */
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+/* ================= 1. ACL ENGINE ================= */
+const SCEN={
+ std:{
+  title:"access-list 10 (STANDARD) • applied with: ip access-group 10 out, on the interface nearest the destination",
+  lines:[
+   "access-list 10 deny   host 192.168.1.77",
+   "access-list 10 permit 192.168.1.0 0.0.0.255"
+  ],
+  actions:['deny','permit'],
+  pkts:[
+   {label:"PACKET A", fields:"SRC 192.168.1.10",
+    intro:"Packet A comes from <span class='hl'>192.168.1.10</span>. A standard ACL checks only the source address: nothing else about the packet matters.",
+    results:[
+     {m:false,why:"Line 10 matches only the exact host <span class='hl'>192.168.1.77</span>. Our source is .10: <span class='hl'>no match</span>. The router moves down."},
+     {m:true,why:"Line 20: wildcard <span class='hl'>0.0.0.255</span> means the first three octets must match and the last is ignored. 192.168.1.10 fits the 192.168.1.0 block."}
+    ],
+    final:{v:'PERMIT',where:'LINE 20',exam:"Exam angle: once line 20 matches, processing stops. No later line, and no implicit deny, is ever consulted."}},
+   {label:"PACKET B", fields:"SRC 192.168.1.77",
+    intro:"Packet B comes from <span class='hl'>192.168.1.77</span>: a host inside the very subnet that line 20 permits. Watch what order does to it.",
+    results:[
+     {m:true,why:"Line 10 matches host <span class='hl'>192.168.1.77</span> exactly. <span class='hl'>First match wins</span>: the packet is denied on the spot, and line 20, which would have permitted it, is never read."}
+    ],
+    final:{v:'DENY',where:'LINE 10',exam:"Exam angle: specific entries go BEFORE general ones. Swap these two lines and the deny would never fire."}},
+   {label:"PACKET C", fields:"SRC 10.0.0.5",
+    intro:"Packet C comes from <span class='hl'>10.0.0.5</span>, a network this ACL never mentions. There is no deny for it anywhere in the visible lines.",
+    results:[
+     {m:false,why:"Line 10: looking for host 192.168.1.77. Source is 10.0.0.5: <span class='hl'>no match</span>."},
+     {m:false,why:"Line 20: the 192.168.1.0/24 block. 10.0.0.5 is nowhere near it: <span class='hl'>no match</span>. Only one line left, and it is invisible."}
+    ],
+    final:{v:'DENY',where:'IMPLICIT DENY',exam:"Exam angle: unmatched traffic is ALWAYS dropped. 'There is no deny statement for that network' is never a reason traffic gets through."}}
+  ]
+ },
+ ext:{
+  title:"access-list 110 (EXTENDED) • applied with: ip access-group 110 in, on the interface nearest the source",
+  lines:[
+   "access-list 110 permit tcp 192.168.1.0 0.0.0.255 host 10.0.2.50 eq 80",
+   "access-list 110 deny   ip  192.168.1.0 0.0.0.255 host 10.0.2.50",
+   "access-list 110 permit ip  any any"
+  ],
+  actions:['permit','deny','permit'],
+  pkts:[
+   {label:"HTTP TO SERVER", fields:"TCP :80→ 10.0.2.50",
+    intro:"A web request: <span class='hl'>TCP port 80</span> from 192.168.1.10 to the server 10.0.2.50. Extended ACLs check source, destination, protocol, and port.",
+    results:[
+     {m:true,why:"Line 10 wants: tcp, source in 192.168.1.0/24, destination host 10.0.2.50, port 80. This packet checks <span class='hl'>every box</span>. Permitted."}
+    ],
+    final:{v:'PERMIT',where:'LINE 10',exam:"Exam angle: 'eq 80' matches the DESTINATION port here, the service being requested."}},
+   {label:"PING TO SERVER", fields:"ICMP → 10.0.2.50",
+    intro:"A <span class='hl'>ping</span> from 192.168.1.10 to the same server. Same endpoints as the web request, different protocol.",
+    results:[
+     {m:false,why:"Line 10 requires <span class='hl'>tcp port 80</span>. ICMP is not TCP: no match, keep going."},
+     {m:true,why:"Line 20: <span class='hl'>ip</span> from 192.168.1.0/24 to host 10.0.2.50 matches ANY protocol between those endpoints. The ping dies here."}
+    ],
+    final:{v:'DENY',where:'LINE 20',exam:"Exam angle: this permit-then-deny pair is the classic 'web yes, everything else no' design. Order makes it work."}},
+   {label:"SSH TO SERVER", fields:"TCP :22→ 10.0.2.50",
+    intro:"An <span class='hl'>SSH attempt</span> (TCP port 22) from 192.168.1.10 to the server. Right protocol, wrong port.",
+    results:[
+     {m:false,why:"Line 10 is TCP, yes, but <span class='hl'>eq 80 only</span>. Port 22 does not match."},
+     {m:true,why:"Line 20 catches all remaining IP traffic to the server from that subnet. Denied."}
+    ],
+    final:{v:'DENY',where:'LINE 20',exam:"Exam angle: matching the protocol is not enough. The port term must match too."}},
+   {label:"HTTP ELSEWHERE", fields:"TCP :80→ 10.0.9.9",
+    intro:"A web request from 192.168.1.10 to a <span class='hl'>different destination</span>, 10.0.9.9. The protected server is not involved.",
+    results:[
+     {m:false,why:"Line 10: destination must be host 10.0.2.50. This goes to 10.0.9.9: <span class='hl'>no match</span>."},
+     {m:false,why:"Line 20: same destination requirement, same result. <span class='hl'>No match</span>."},
+     {m:true,why:"Line 30: <span class='hl'>permit ip any any</span> catches everything the first two lines ignored. Without this line, this harmless packet would die at the implicit deny."}
+    ],
+    final:{v:'PERMIT',where:'LINE 30',exam:"Exam angle: a trailing permit ip any any overrides the implicit deny. Adding or removing it transforms what an ACL does."}}
+  ]
+ }
+};
+let scen='std', pkt=null, lineIdx=0, engineDone=false;
+const aclBox=document.getElementById('aclBox'), pktRow=document.getElementById('pktRow');
+const stepBtn=document.getElementById('stepBtn');
+let lineEls=[], impEl=null;
+
+function eSay(tag,txt,exam){
+  document.getElementById('eTag').textContent=tag;
+  document.getElementById('eTxt').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('eExam').innerHTML=exam;
+  gsap.from('#viewLearn .infobar',{opacity:.6,duration:.3});
+}
+function buildScen(){
+  const S=SCEN[scen];
+  document.getElementById('aclTitle').textContent=S.title;
+  aclBox.innerHTML=''; lineEls=[];
+  S.lines.forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='cline';
+    d.innerHTML=`<span class="ln">${(i+1)*10}</span><span>${t}</span>`;
+    aclBox.appendChild(d); lineEls.push(d);
+  });
+  impEl=document.createElement('div'); impEl.className='cline implicit';
+  impEl.innerHTML=`<span class="ln">end</span><span>deny any  (implicit: present in every ACL, invisible in the config)</span>`;
+  aclBox.appendChild(impEl);
+  pktRow.innerHTML='';
+  S.pkts.forEach((p,i)=>{
+    const b=document.createElement('button'); b.className='pktbtn';
+    b.innerHTML=`<b>${p.label}</b>${p.fields}`;
+    b.onclick=()=>selectPkt(i,b);
+    pktRow.appendChild(b);
+  });
+  pkt=null; lineIdx=0; engineDone=false; stepBtn.disabled=true;
+  eSay('PICK A PACKET','Choose one of the test packets below the list, then step it through the ACL one line at a time.',
+    scen==='std'?"Exam angle: a standard ACL filters on SOURCE address only.":"Exam angle: an extended ACL matches source, destination, protocol, and port.");
+  gsap.from('#aclBox .cline',{opacity:0,x:-14,stagger:.07,duration:.4});
+}
+function clearLineStates(){
+  lineEls.forEach(el=>el.classList.remove('cur','pass','hitP','hitD'));
+  impEl.classList.remove('cur','hitD');
+}
+function selectPkt(i,btn){
+  const S=SCEN[scen];
+  [...pktRow.children].forEach(x=>x.classList.remove('on'));
+  btn.classList.add('on');
+  clearLineStates();
+  pkt=S.pkts[i]; lineIdx=0; engineDone=false; stepBtn.disabled=false;
+  eSay('PACKET LOADED // '+pkt.label, pkt.intro+" Press <span class='hl'>CHECK NEXT LINE</span>.","");
+}
+stepBtn.onclick=()=>{
+  if(!pkt||engineDone)return;
+  const S=SCEN[scen];
+  if(lineIdx<pkt.results.length){
+    const r=pkt.results[lineIdx], el=lineEls[lineIdx];
+    lineEls.forEach(x=>x.classList.remove('cur'));
+    el.classList.add('cur');
+    gsap.from(el,{x:-8,duration:.25});
+    if(r.m){
+      const act=S.actions[lineIdx];
+      el.classList.remove('cur');
+      el.classList.add(act==='permit'?'hitP':'hitD');
+      engineDone=true; stepBtn.disabled=true;
+      eSay('VERDICT // '+(pkt.final.v==='PERMIT'?'PERMITTED':'DENIED')+' BY '+pkt.final.where, r.why, pkt.final.exam);
+      gsap.fromTo(el,{scale:1},{scale:1.02,yoyo:true,repeat:1,duration:.2});
+    }else{
+      eSay('LINE '+((lineIdx+1)*10)+' // NO MATCH', r.why, "");
+      el.classList.remove('cur'); el.classList.add('pass');
+      lineIdx++;
+    }
+  }else{
+    impEl.classList.add('hitD');
+    engineDone=true; stepBtn.disabled=true;
+    eSay('VERDICT // DENIED BY THE IMPLICIT DENY',
+      "The packet matched nothing, so it falls off the end of the list into the <span class='hl'>implicit deny any</span>. Dropped, silently.",
+      pkt.final.exam);
+    gsap.fromTo(impEl,{scale:1},{scale:1.02,yoyo:true,repeat:1,duration:.2});
+  }
+};
+document.getElementById('eReset').onclick=buildScen;
+document.getElementById('mStd').onclick=e=>{scen='std'; modeUI(e.target); buildScen();};
+document.getElementById('mExt').onclick=e=>{scen='ext'; modeUI(e.target); buildScen();};
+function modeUI(btn){
+  document.getElementById('mStd').classList.remove('on');
+  document.getElementById('mExt').classList.remove('on');
+  btn.classList.add('on');
+}
+buildScen();
+
+/* ================= 2. WILDCARD DECODER ================= */
+const WC={
+ h:{t:"0.0.0.0 // EXACT HOST",x:"Every bit is 0: <span class='hl'>every bit must match</span>. Pairs with one address to select exactly one host. The keyword <span class='hl'>host 10.1.1.1</span> is shorthand for 10.1.1.1 0.0.0.0.",
+    e:"Exam angle: the shortcut formula is 255.255.255.255 minus the subnet mask. A /24 mask of 255.255.255.0 gives wildcard 0.0.0.255."},
+ q:{t:"0.0.0.255 // ONE /24 NETWORK",x:"First three octets locked, last octet free: selects a whole <span class='hl'>/24 block</span> of 256 addresses, like 192.168.1.0 through 192.168.1.255.",
+    e:"Exam angle: this is the wildcard you will type most. 255.255.255.255 minus 255.255.255.0 = 0.0.0.255."},
+ s:{t:"0.0.0.63 // ONE /26 BLOCK",x:"63 is 00111111 in binary: the last <span class='hl'>6 bits are ignored</span>, selecting a block of 64 addresses. Paired with 10.1.1.64 it matches 10.1.1.64 through 10.1.1.127.",
+    e:"Exam angle: /26 mask 255.255.255.192, and 255 minus 192 = 63. The subtraction trick works octet by octet."},
+ b:{t:"0.0.3.255 // ONE /22 BLOCK",x:"Third octet ignores 2 bits, fourth ignores all 8: a <span class='hl'>/22 block</span> of 1024 addresses, four consecutive /24s. Paired with 172.16.8.0 it covers 172.16.8.0 through 172.16.11.255.",
+    e:"Exam angle: /22 mask 255.255.252.0, and 255.255.255.255 minus it = 0.0.3.255. Larger-than-/24 wildcards are where points are lost."},
+ a:{t:"255.255.255.255 // ANY",x:"Every bit ignored: matches <span class='hl'>every address that exists</span>. The keyword <span class='hl'>any</span> is shorthand for 0.0.0.0 255.255.255.255.",
+    e:"Exam angle: permit ip any any at the end of a list neutralizes the implicit deny. Know what adding or deleting it does."}
+};
+document.querySelectorAll('.chip[data-w]').forEach(c=>{
+  c.onclick=()=>{
+    document.querySelectorAll('.chip[data-w]').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    const W=WC[c.dataset.w];
+    document.getElementById('wTag').textContent=W.t;
+    document.getElementById('wTxt').innerHTML=W.x;
+    document.getElementById('wExam').innerHTML=W.e;
+  };
+});
+
+/* ================= 3. DRILL ================= */
+const D_Q=[
+ {s:"Which wildcard mask, paired with 10.1.1.1, matches exactly that one host?",o:["0.0.0.0","0.0.0.255","255.255.255.255","255.255.255.0"],a:0,
+  e:"All zeros = every bit must match = one host. Same as the keyword host."},
+ {s:"Which wildcard mask selects exactly the 172.16.32.0/24 network?",o:["255.255.255.0","0.0.0.255","0.0.255.255","0.0.0.0"],a:1,
+  e:"255.255.255.255 minus 255.255.255.0 = 0.0.0.255. A subnet mask in that position is always a planted wrong answer."},
+ {s:"Which wildcard mask selects exactly the 192.168.4.0/22 block?",o:["0.0.0.255","0.0.3.255","0.3.255.255","255.255.252.0"],a:1,
+  e:"The /22 mask is 255.255.252.0; subtract from all 255s to get 0.0.3.255: four consecutive /24s."},
+ {s:"Where should a STANDARD ACL be placed?",o:["As close to the source as possible","As close to the destination as possible","Always on the vty lines","Always inbound on the WAN link"],a:1,
+  e:"Standard ACLs see only the source. Placed near the source they would block that source from reaching everything, so they go near the destination."},
+ {s:"Where should an EXTENDED ACL be placed?",o:["As close to the destination as possible","On the switch access port","As close to the source as possible","On the DNS server"],a:2,
+  e:"Extended ACLs are precise enough to kill exactly the unwanted traffic, so drop it early, near the source, before it wastes bandwidth."},
+ {s:"A packet is compared against every line of an ACL and matches none of them. What happens?",o:["It is permitted by default","It is flooded to all ports","It is dropped by the implicit deny","It is queued until a line matches"],a:2,
+  e:"Every ACL ends with an invisible deny any. Unmatched traffic is always dropped."},
+ {s:"How many ACLs can be applied per interface, per direction, per protocol?",o:["One","Two","Four","Unlimited"],a:0,
+  e:"One. The memory hook: one ACL per interface, per direction, per protocol."},
+ {s:"Which command applies ACL 10 so that it restricts remote management sessions to the device itself?",o:["ip access-group 10 in on g0/0","access-class 10 in on the vty lines","ip access-list 10 vty","line acl 10"],a:1,
+  e:"Protecting the vty lines uses access-class, not ip access-group. The exam tests this exact distinction."}
+];
+let dOrder=[], dI=0, dS=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function dRound(){
+  if(dI>=D_Q.length){
+    document.getElementById('dScen').textContent="Done.";
+    document.getElementById('dOpts').innerHTML='';
+    const f=document.getElementById('dFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${dS} / 8 `+(dS===8?"ACL rules locked in.":dS>=6?"Solid. Re-run the ones you missed.":"Re-read sections 1 and 2, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('dStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=dOrder[dI];
+  document.getElementById('dRound').textContent=dI+1;
+  document.getElementById('dScen').textContent=Q.s;
+  gsap.from('#dScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('dOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){dS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#dScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('dScore').textContent=dS;
+      document.getElementById('dScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; dI++; dRound();},2300);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('dStart').onclick=e=>{
+  dOrder=shuffle([...D_Q]); dI=0; dS=0;
+  document.getElementById('dScore').textContent="0";
+  document.getElementById('dFinal').style.display='none';
+  e.target.style.display='none'; dRound();
+};
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"L",stem:"An ACL contains, in order: 10 permit 192.168.1.0 0.0.0.255, then 20 deny host 192.168.1.77. What happens to traffic sourced from 192.168.1.77?",
+  o:["It is denied by line 20","It is permitted by line 10","It is dropped by the implicit deny","It is permitted only for TCP"],a:1,
+  e:"Line 10 matches first (the host is inside that /24) and processing stops. The deny below never fires: order is everything."},
+ {t:"L",stem:"A packet reaches the end of an ACL without matching any configured entry. What happens to it?",
+  o:["It is forwarded normally","It is dropped by the implicit deny any","It is sent to the default gateway","It is logged and permitted"],a:1,
+  e:"Every ACL silently ends with deny any. Unmatched traffic is always dropped."},
+ {t:"L",stem:"An administrator adds permit ip any any as the last line of an extended ACL. What is the effect?",
+  o:["No effect: the line duplicates the implicit behavior","All traffic not matched earlier is now permitted instead of dropped","The ACL becomes a standard ACL","The implicit deny moves to the top"],a:1,
+  e:"The trailing permit catches everything the implicit deny would have dropped. Adding or removing this one line transforms the ACL."},
+ {t:"W",stem:"Which wildcard mask selects exactly the 172.16.8.0/24 network?",
+  o:["255.255.255.0","0.0.255.255","0.0.0.255","0.255.255.255"],a:2,
+  e:"255.255.255.255 minus the /24 mask 255.255.255.0 = 0.0.0.255."},
+ {t:"W",stem:"An ACL entry uses the wildcard mask 0.0.0.63. How many addresses does it match?",
+  o:["32","63","64","128"],a:2,
+  e:"63 = six ignored bits = a block of 64 addresses, which is a /26."},
+ {t:"W",stem:"Which address and wildcard pair matches only the host 10.1.1.1?",
+  o:["10.1.1.1 255.255.255.255","10.1.1.1 0.0.0.0","10.1.1.0 0.0.0.255","10.0.0.0 0.255.255.255"],a:1,
+  e:"Wildcard 0.0.0.0 means every bit must match: exactly one host, same as the host keyword."},
+ {t:"P",stem:"Why are standard ACLs placed as close to the destination as possible?",
+  o:["They consume less CPU there","They match only the source address, so early placement would block too much","Routers only support them on LAN interfaces","They must be on the same subnet as the server"],a:1,
+  e:"With only the source visible, a standard ACL near the source would cut that source off from everything, not just the intended destination."},
+ {t:"P",stem:"A network team wants to drop unwanted traffic before it crosses the WAN. Which ACL type and placement accomplish this?",
+  o:["Standard ACL near the destination","Standard ACL near the source","Extended ACL near the source","Extended ACL near the destination"],a:2,
+  e:"Extended ACLs are precise enough to place near the source, killing the exact unwanted traffic before it consumes bandwidth."},
+ {t:"C",stem:"Which command applies ACL 110 to incoming traffic on interface GigabitEthernet0/1?",
+  o:["access-class 110 in","ip access-group 110 in","ip access-list 110 in","access-group 110 inbound"],a:1,
+  e:"Interfaces take ip access-group. The access-class command belongs on the vty lines only."},
+ {t:"C",stem:"An administrator must allow remote management of a router only from the 10.9.9.0/24 admin subnet. Where is the ACL applied?",
+  o:["Inbound on every interface with ip access-group","On the vty lines with access-class 10 in","On the console line with login acl","Outbound on the WAN interface"],a:1,
+  e:"Protecting access to the device itself is a vty job: access-class 10 in, with ACL 10 permitting the admin subnet."}
+];
+const TOPICS={L:"ACL LOGIC",W:"WILDCARDS",P:"PLACEMENT",C:"CONFIGURATION"};
+let qOrder=[], qi=0, qScore=0, per={L:[0,0],W:[0,0],P:[0,0],C:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdL').textContent=per.L[0]+"/"+per.L[1];
+  document.getElementById('bdW').textContent=per.W[0]+"/"+per.W[1];
+  document.getElementById('bdP').textContent=per.P[0]+"/"+per.P[1];
+  document.getElementById('bdC').textContent=per.C[0]+"/"+per.C[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on ACLs. Move to Artifact 2 (Device Hardening), then take the graded quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: run every packet through both ACL scenarios, click every wildcard chip, finish the drill at 8/8, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={L:[0,0],W:[0,0],P:[0,0],C:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={L:[0,0],W:[0,0],P:[0,0],C:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>

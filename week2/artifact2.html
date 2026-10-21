@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CET1856 &bull; Week 2 &bull; Device Hardening &amp; Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{--navy:#1B2A4A; --navy2:#24365E; --gold:#C9A227; --sky:#6EB5DC; --sky2:#9CCDE8;
+        --bg:#F4F8FB; --card:#fff; --line:#D9E2EC; --ink:#1B2A4A; --muted:#4A5A78; --ok:#2E8B57; --bad:#C0392B;}
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg); font-family:'IBM Plex Sans',Arial,sans-serif; color:var(--ink); padding:24px 16px 60px;}
+  .wrap{max-width:1060px; margin:0 auto;}
+  .hero{background:var(--navy); border-radius:14px; padding:26px 30px 22px;}
+  .hero .kicker{color:var(--gold); font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:3px;}
+  .hero h1{color:#fff; font-family:'Chakra Petch',sans-serif; font-size:clamp(26px,5vw,40px); margin-top:6px;}
+  .hero p{color:var(--sky); font-size:15px; margin-top:8px; max-width:720px; line-height:1.6;}
+  .tabs{display:flex; gap:8px; margin-top:18px;}
+  .tab{font-family:'Chakra Petch',sans-serif; font-size:14.5px; padding:11px 26px; border-radius:24px 24px 0 0; border:none; cursor:pointer; background:#0F1B33; color:#9CCDE8;}
+  .tab.on{background:var(--bg); color:var(--navy);}
+  h2{font-family:'Chakra Petch',sans-serif; font-size:23px; margin:34px 0 6px;}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:14px;}
+  .btn{border:none; border-radius:24px; font-family:'Chakra Petch',sans-serif; font-size:14px; padding:10px 22px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:var(--navy);}
+  .btn.ghost{background:transparent; color:#fff; border:2px solid #3D5178;}
+  .btn:disabled{opacity:.35; cursor:default;}
+  .panel{background:var(--navy); border-radius:14px; padding:20px;}
+  .infobar{background:var(--navy2); border-radius:10px; padding:13px 18px; color:#fff; font-size:14px; line-height:1.65; margin-top:12px; min-height:96px;}
+  .infobar .tag{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; display:block; margin-bottom:4px;}
+  .infobar .exam{display:block; margin-top:8px; color:var(--gold); font-size:13px;}
+  .infobar .hl{color:var(--sky); font-weight:600;}
+  .btns{display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center;}
+  .view{display:none;} .view.on{display:block;}
+  /* audit */
+  .cfgbox{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:12px 14px;}
+  .cfghead{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sky); margin-bottom:8px;}
+  .cfgline{font-family:'IBM Plex Mono',monospace; font-size:13px; color:#fff; padding:7px 10px; border-radius:7px; border:2px solid transparent; cursor:pointer; margin-bottom:2px;}
+  .cfgline:hover{background:#1A2C52;}
+  .cfgline.found{background:#4A1F1A; border-color:#C0392B; cursor:default;}
+  .cfgline.safeflag{background:#17402B; border-color:#2E8B57;}
+  .cfgline.fixed{background:#17402B; border-color:#2E8B57; cursor:default;}
+  .cfgline .fixnote{display:block; color:#7BE0C3; font-size:11.5px; margin-top:3px;}
+  .m-meta{display:flex; align-items:center; gap:18px; margin-top:12px; color:var(--sky); font-size:14px; flex-wrap:wrap;}
+  .m-meta b{font-family:'Chakra Petch',sans-serif; font-size:20px; color:var(--gold);}
+  /* sequencer */
+  .seqgrid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:760px){.seqgrid{grid-template-columns:1fr;}}
+  .cmdpool{display:flex; flex-direction:column; gap:8px;}
+  .cmdbtn{font-family:'IBM Plex Mono',monospace; font-size:12.5px; background:var(--navy2); color:#fff; border:2px solid #3D5178; border-radius:10px; padding:10px 14px; cursor:pointer; text-align:left;}
+  .cmdbtn:hover{border-color:var(--sky);}
+  .cmdbtn.used{opacity:.22; pointer-events:none;}
+  .term{background:#0F1B33; border:1px solid #3D5178; border-radius:10px; padding:12px 14px; min-height:230px;}
+  .term .title{font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:11px; letter-spacing:2px; margin-bottom:8px;}
+  .term .tline{font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:#7BE0C3; padding:4px 0;}
+  .term .tline span{color:#7C8DB0;}
+  /* drill */
+  .drill{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .drill .scen{font-size:16px; font-weight:600; line-height:1.6; min-height:56px; max-width:720px; margin:0 auto;}
+  .drill .opts{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:16px;}
+  .opt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:24px; padding:10px 20px; cursor:pointer;}
+  .opt:hover{border-color:var(--sky);}
+  .opt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .opt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .meta{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .meta b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .final{font-family:'Chakra Petch',sans-serif; font-size:20px; margin-top:12px; display:none;}
+  /* test prep */
+  .pattern{background:var(--card); border:1px solid var(--line); border-left:6px solid var(--sky); border-radius:10px; padding:16px 20px; margin-bottom:12px;}
+  .pattern h3{font-family:'Chakra Petch',sans-serif; font-size:16px; margin-bottom:6px;}
+  .pattern p{font-size:14px; line-height:1.65;}
+  .pattern .trap{display:block; margin-top:8px; color:var(--bad); font-size:13.5px; font-weight:600;}
+  .pattern code{font-family:'IBM Plex Mono',monospace; background:var(--bg); padding:1px 7px; border-radius:5px; font-size:13px;}
+  .exam{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:26px; text-align:center;}
+  .exam .qtag{font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:2px; color:var(--gold); font-weight:700;}
+  .exam .stem{font-size:16.5px; font-weight:600; line-height:1.6; margin:12px auto 4px; max-width:760px; text-align:left;}
+  .exam .qopts{display:flex; flex-direction:column; gap:9px; margin:16px auto 0; max-width:640px;}
+  .qopt{font-size:14px; font-weight:600; color:var(--navy); background:var(--bg); border:2px solid var(--line); border-radius:12px; padding:11px 18px; cursor:pointer; text-align:left;}
+  .qopt:hover{border-color:var(--sky);}
+  .qopt.correct{background:#E7F5EC; border-color:#2E8B57; color:#1E5B38;}
+  .qopt.wrong{background:#FBEAEA; border-color:#C0392B; color:#8C2B21;}
+  .exp{display:none; margin:14px auto 0; max-width:640px; background:#FFF8E7; border-left:4px solid var(--gold); border-radius:8px; padding:11px 15px; font-size:14px; line-height:1.6; text-align:left;}
+  .exam .row{display:flex; justify-content:center; gap:26px; font-size:14px; color:var(--muted); margin-top:16px;}
+  .exam .row b{font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;}
+  .results{display:none;}
+  .meter{height:16px; background:var(--bg); border:1px solid var(--line); border-radius:9px; overflow:hidden; margin:14px auto 6px; max-width:520px;}
+  .meter .fill{height:100%; width:0; background:linear-gradient(90deg,var(--sky),var(--gold)); border-radius:9px;}
+  .bigscore{font-family:'Chakra Petch',sans-serif; font-size:34px; color:var(--navy);}
+  .bd{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:14px;}
+  .bd .cell{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 20px; font-size:13.5px;}
+  .bd .cell b{font-family:'Chakra Petch',sans-serif; font-size:17px; display:block;}
+  .advice{margin-top:14px; font-size:14.5px; line-height:1.6; color:var(--muted); max-width:640px; margin-left:auto; margin-right:auto;}
+  .footer{background:var(--navy); border-radius:12px; padding:16px 22px; margin-top:34px; color:#fff; font-size:14px; line-height:1.6;}
+  .footer strong{color:var(--gold);}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="kicker">CET1856 // WEEK 2 // ARTIFACT 2 of 2</div>
+    <h1>Device Hardening &amp; Management</h1>
+    <p>Every router and switch ships wide open: plaintext passwords, Telnet enabled, default SNMP strings. In this simulation you audit a real config and find every hole, build SSH access in the correct order, and drill the fixes. Then switch to Test Prep.</p>
+    <div class="tabs">
+      <button class="tab on" id="tabLearn">LEARN THE TOPIC</button>
+      <button class="tab" id="tabTest">TEST PREP</button>
+    </div>
+  </div>
+
+  <!-- ==================================================== LEARN -->
+  <div class="view on" id="viewLearn">
+
+    <h2>1. The security audit</h2>
+    <div class="sub">This switch config has 6 security problems. Click every line you believe is a risk. Clicking a safe line counts as a false positive, exactly like flagging good config in a real audit.</div>
+    <div class="panel">
+      <div class="cfgbox">
+        <div class="cfghead">Branch-SW1# show running-config (excerpt)</div>
+        <div id="cfgLines"></div>
+      </div>
+      <div class="infobar"><span class="tag" id="aTag">START CLICKING</span><span id="aTxt">Read like an attacker: what in this config would you abuse first? Click a line to flag it.</span><span class="exam" id="aExam">Exam angle: hardening questions are symptom-to-fix mappings. Every risk you find here has one canonical fix command.</span></div>
+      <div class="m-meta">
+        <span>Risks found: <b id="aFound">0</b>/6</span><span>False positives: <b id="aFalse">0</b></span>
+        <button class="btn gold" id="aFix" disabled style="margin-left:auto;">APPLY ALL FIXES &#128274;</button>
+        <button class="btn ghost" id="aReset">RESET &#8634;</button>
+      </div>
+    </div>
+
+    <h2>2. The SSH build sequence</h2>
+    <div class="sub">Six commands turn an open device into SSH-only management, and the order matters: the RSA keys cannot generate without a hostname and domain name. Click the commands in the correct order.</div>
+    <div class="panel">
+      <div class="seqgrid">
+        <div class="cmdpool" id="cmdPool"></div>
+        <div class="term">
+          <div class="title">R1 TERMINAL // COMMANDS ACCEPTED</div>
+          <div id="termOut"></div>
+        </div>
+      </div>
+      <div class="infobar"><span class="tag" id="sTag">STEP 1 of 6</span><span id="sTxt">Which command comes first? Think about what the RSA key generation needs before it can run.</span><span class="exam" id="sExam">Exam angle: the ordering question "which command must exist before crypto key generate rsa?" is a CCNA classic. The answer: hostname and ip domain-name.</span></div>
+      <div class="btns">
+        <span style="color:var(--sky); font-size:14px;">Wrong picks: <b id="sMiss" style="font-family:'Chakra Petch',sans-serif; color:var(--gold); font-size:18px;">0</b></span>
+        <button class="btn ghost" id="sReset" style="margin-left:auto;">RESET &#8634;</button>
+      </div>
+    </div>
+
+    <h2>3. The fix-it drill</h2>
+    <div class="sub">Six help-desk situations. Pick the command or action that fixes each one. These symptom-to-fix pairs are exactly how the exam asks hardening.</div>
+    <div class="drill">
+      <div class="scen" id="fScen">Six rounds covering passwords, SNMP, backup, and management access.</div>
+      <div class="opts" id="fOpts"></div>
+      <div class="meta"><span>Round <b id="fRound">0</b>/6</span><span>Score <b id="fScore">0</b></span></div>
+      <button class="btn gold" id="fStart" style="margin-top:16px;">START</button>
+      <div class="final" id="fFinal"></div>
+    </div>
+  </div>
+
+  <!-- ==================================================== TEST PREP -->
+  <div class="view" id="viewTest">
+
+    <h2>How the exam asks this</h2>
+    <div class="sub">Hardening and management questions follow four reliable patterns.</div>
+
+    <div class="pattern">
+      <h3>Pattern 1: the SSH checklist, in order</h3>
+      <p>Hostname and <code>ip domain-name</code> first (the RSA keys are named from them), then <code>crypto key generate rsa</code> (modulus 1024 or higher for SSH v2), a local user created with <code>username admin secret ...</code>, and on the vty lines: <code>login local</code> plus <code>transport input ssh</code>. Enforce the modern protocol with <code>ip ssh version 2</code>.</p>
+      <span class="trap">Trap: trying to generate keys before the domain name exists. The router literally refuses, and the exam knows it.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 2: the password hierarchy</h3>
+      <p><code>enable secret</code> stores a hash and <strong>always takes precedence</strong> over <code>enable password</code>, which stores plaintext. <code>service password-encryption</code> applies weak, reversible type 7 obfuscation to plaintext passwords: better than nothing, nowhere near a real hash. For local users, <code>username ... secret</code> beats <code>username ... password</code> for the same reason.</p>
+      <span class="trap">Trap: "service password-encryption makes passwords secure." It does not. It stops shoulder-surfing, not attackers. The secure options are the secret commands.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 3: SNMP versions and community strings</h3>
+      <p>SNMPv2c authenticates with <strong>plaintext community strings</strong>: read-only (RO) and read-write (RW). SNMPv3 adds real <strong>authentication and encryption</strong>, which is its exam-tested advantage. The defaults <code>public</code> and <code>private</code> are known to every attacker on earth.</p>
+      <span class="trap">Trap: a config with snmp-server community public RW is a double fail: a well-known string AND write access. Flag both.</span>
+    </div>
+    <div class="pattern">
+      <h3>Pattern 4: copy commands read left to right</h3>
+      <p><code>copy running-config tftp</code> copies FROM the running config TO the server: a backup. <code>copy tftp running-config</code> is the restore. Same logic for startup-config: <code>copy running-config startup-config</code> is the everyday save. Source first, destination second, always.</p>
+      <span class="trap">Trap: reversed copy commands among the options. Read them left to right as "from, to" and the trap disappears.</span>
+    </div>
+
+    <h2>Practice test</h2>
+    <div class="sub">10 questions, exam style, one at a time. Per-topic breakdown at the end. Then take the graded 25-question Week 2 quiz in Canvas.</div>
+
+    <div class="exam" id="examBox">
+      <div id="qArea">
+        <div class="qtag" id="qTag">READY</div>
+        <div class="stem" id="qStem" style="text-align:center;">Ten questions covering SSH, passwords and AAA, SNMP, and device management. No notes, no going back.</div>
+        <button class="btn gold" id="qStart" style="margin-top:18px;">START PRACTICE TEST</button>
+        <div class="qopts" id="qOpts"></div>
+        <div class="exp" id="qExp"></div>
+        <button class="btn gold" id="qNext" style="display:none; margin-top:16px;">NEXT QUESTION &#9654;</button>
+        <div class="row"><span>Question <b id="qN">0</b>/10</span><span>Score <b id="qS">0</b></span></div>
+      </div>
+      <div class="results" id="qRes">
+        <div class="qtag">RESULTS</div>
+        <div class="bigscore" id="rScore">0 / 10</div>
+        <div class="meter"><div class="fill" id="rFill"></div></div>
+        <div class="bd">
+          <div class="cell">SSH<b id="bdS">0/0</b></div>
+          <div class="cell">Passwords &amp; AAA<b id="bdP">0/0</b></div>
+          <div class="cell">SNMP<b id="bdN">0/0</b></div>
+          <div class="cell">Management<b id="bdM">0/0</b></div>
+        </div>
+        <div class="advice" id="rAdvice"></div>
+        <button class="btn gold" id="qRetake" style="margin-top:16px;">RETAKE (new order) &#8634;</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><strong>This week's labs:</strong> you harden real devices in <span style="font-family:'IBM Plex Mono',monospace;">CET1856-W2S7</span> and <span style="font-family:'IBM Plex Mono',monospace;">W2S8</span>: SSH-only access, local AAA, SNMP, and TFTP backup and restore. Then take the <strong>Week 2 quiz in Canvas</strong> (25 questions, covers both artifacts).</div>
+</div>
+
+<script>
+/* ================= VIEWS ================= */
+const vL=document.getElementById('viewLearn'), vT=document.getElementById('viewTest');
+function show(view){
+  [vL,vT].forEach(v=>v.classList.remove('on'));
+  document.getElementById('tabLearn').classList.toggle('on',view===vL);
+  document.getElementById('tabTest').classList.toggle('on',view===vT);
+  view.classList.add('on');
+  gsap.from(view,{opacity:0,y:16,duration:.45,ease:'power2.out'});
+}
+document.getElementById('tabLearn').onclick=()=>show(vL);
+document.getElementById('tabTest').onclick=()=>show(vT);
+
+/* ================= 1. AUDIT ================= */
+const CFG=[
+ {txt:"hostname Branch-SW1", risk:false},
+ {txt:"enable password cisco", risk:true,
+  why:"A plaintext, dictionary-word enable password. Anyone reading the config owns the device.",
+  fix:"enable secret <strong-passphrase>  (stored as a hash, and it overrides enable password)",
+  fixed:"enable secret $1$Xk2...  (hashed)"},
+ {txt:"no service password-encryption", risk:true,
+  why:"Every line password in this config is sitting in cleartext for anyone who sees the file or a shoulder-surfed screen.",
+  fix:"service password-encryption  (type 7: weak, but it ends cleartext on screen)",
+  fixed:"service password-encryption"},
+ {txt:"username admin privilege 15 password letmein", risk:true,
+  why:"A level 15 account protected by a weak plaintext password. This is the account SSH will use: it deserves a hash.",
+  fix:"username admin privilege 15 secret <strong-passphrase>",
+  fixed:"username admin privilege 15 secret $1$9f4...  (hashed)"},
+ {txt:"ip domain-name cbt.edu", risk:false},
+ {txt:"interface Vlan1", risk:false},
+ {txt:" ip address 192.168.1.2 255.255.255.0", risk:false},
+ {txt:"snmp-server community public RW", risk:true,
+  why:"The default community string, with WRITE access. Any attacker can reconfigure this switch over UDP 161.",
+  fix:"unique community string, RO only, or better: SNMPv3 with authentication and encryption",
+  fixed:"snmp-server community B7-mon-R0 RO"},
+ {txt:"ntp server 10.0.0.5", risk:false},
+ {txt:"logging host 10.0.0.20", risk:false},
+ {txt:"banner motd ^ Authorized access only ^", risk:false},
+ {txt:"line con 0", risk:false},
+ {txt:" exec-timeout 0 0", risk:true,
+  why:"Timeout disabled: a session left open at a console stays logged in forever. Walk-up access for anyone.",
+  fix:"exec-timeout 5 0  (idle sessions close after 5 minutes)",
+  fixed:" exec-timeout 5 0"},
+ {txt:"line vty 0 4", risk:false},
+ {txt:" transport input telnet", risk:true,
+  why:"Telnet sends every keystroke, passwords included, in cleartext across the network.",
+  fix:"transport input ssh  (after the SSH build sequence in section 2)",
+  fixed:" transport input ssh"},
+ {txt:" login local", risk:false}
+];
+const TOTAL_RISKS=CFG.filter(l=>l.risk).length;
+let found=0, falsePos=0;
+const cfgWrap=document.getElementById('cfgLines');
+function aSay(tag,txt,exam){
+  document.getElementById('aTag').textContent=tag;
+  document.getElementById('aTxt').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('aExam').innerHTML=exam;
+  gsap.from('#viewLearn .infobar',{opacity:.6,duration:.3});
+}
+function buildAudit(){
+  cfgWrap.innerHTML=''; found=0; falsePos=0;
+  document.getElementById('aFound').textContent="0";
+  document.getElementById('aFalse').textContent="0";
+  document.getElementById('aFix').disabled=true;
+  CFG.forEach((L,i)=>{
+    const d=document.createElement('div'); d.className='cfgline'; d.textContent=L.txt; d.dataset.i=i;
+    d.onclick=()=>clickLine(L,d);
+    cfgWrap.appendChild(d);
+  });
+  aSay('START CLICKING','Read like an attacker: what in this config would you abuse first? Click a line to flag it.',
+    'Exam angle: hardening questions are symptom-to-fix mappings. Every risk you find here has one canonical fix command.');
+  gsap.from('#cfgLines .cfgline',{opacity:0,x:-12,stagger:.03,duration:.3});
+}
+function clickLine(L,el){
+  if(el.dataset.done)return;
+  if(L.risk){
+    el.dataset.done="1"; el.classList.add('found'); found++;
+    document.getElementById('aFound').textContent=found;
+    const fx=document.createElement('span'); fx.className='fixnote';
+    fx.innerHTML='FIX: '+L.fix; el.appendChild(fx);
+    gsap.from(el,{scale:.98,duration:.25});
+    aSay('RISK FOUND ('+found+' of '+TOTAL_RISKS+')', L.why,
+      found===TOTAL_RISKS?'All six found. Press APPLY ALL FIXES and read the hardened config.':'');
+    if(found===TOTAL_RISKS){
+      document.getElementById('aFix').disabled=false;
+      gsap.fromTo('#aFix',{scale:1},{scale:1.1,yoyo:true,repeat:3,duration:.2});
+    }
+  }else{
+    falsePos++;
+    document.getElementById('aFalse').textContent=falsePos;
+    el.classList.add('safeflag');
+    gsap.fromTo(el,{x:0},{x:-7,duration:.06,yoyo:true,repeat:5,onComplete:()=>el.classList.remove('safeflag')});
+    aSay('FALSE POSITIVE','That line is fine. '+(
+      L.txt.indexOf('banner')>-1?'A legal warning banner is a hardening MEASURE, not a risk.':
+      L.txt.indexOf('login local')>-1?'login local is correct: it points the line at the local username database.':
+      L.txt.indexOf('domain-name')>-1?'The domain name is REQUIRED for SSH key generation. Keep it.':
+      'Hostnames, addressing, NTP, and logging lines are normal operations config.'),'');
+  }
+}
+document.getElementById('aFix').onclick=()=>{
+  document.getElementById('aFix').disabled=true;
+  [...cfgWrap.children].forEach((el,i)=>{
+    const L=CFG[i];
+    if(L.risk){
+      el.classList.remove('found'); el.classList.add('fixed');
+      el.innerHTML=L.fixed+'<span class="fixnote">hardened</span>';
+      gsap.from(el,{opacity:0,duration:.6});
+    }
+  });
+  aSay('CONFIG HARDENED','Hashed secrets, SSH-only transport, a unique read-only SNMP string, and real timeouts. This before-and-after is your W2S8 lab deliverable.',
+    'Exam angle: be able to spot BOTH directions: the risky line in a config, and the command that fixes it.');
+};
+document.getElementById('aReset').onclick=buildAudit;
+buildAudit();
+
+/* ================= 2. SSH SEQUENCER ================= */
+const SEQ=[
+ {cmd:"hostname R1", why:"The device needs a real name: the RSA key pair is labeled with hostname and domain."},
+ {cmd:"ip domain-name cbt.edu", why:"The second half of the key label. Without it, the router refuses to generate keys."},
+ {cmd:"crypto key generate rsa modulus 2048", why:"Now the keys can generate. A modulus of 1024 or higher is required for SSH version 2."},
+ {cmd:"username admin privilege 15 secret Str0ng!Pass", why:"SSH logs in with a local account, so one must exist, with a hashed secret."},
+ {cmd:"line vty 0 4  +  login local", why:"Point the vty lines at the local username database instead of a shared line password."},
+ {cmd:"transport input ssh", why:"The door closes: Telnet is refused, SSH only. Finish with ip ssh version 2 to enforce the modern protocol."}
+];
+let seqStep=0, seqMiss=0;
+const pool=document.getElementById('cmdPool'), term=document.getElementById('termOut');
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function sSay(tag,txt,exam){
+  document.getElementById('sTag').textContent=tag;
+  document.getElementById('sTxt').innerHTML=txt;
+  if(exam!==undefined)document.getElementById('sExam').innerHTML=exam;
+}
+function buildSeq(){
+  seqStep=0; seqMiss=0;
+  document.getElementById('sMiss').textContent="0";
+  term.innerHTML=''; pool.innerHTML='';
+  shuffle(SEQ.map((s,i)=>i)).forEach(i=>{
+    const b=document.createElement('button'); b.className='cmdbtn'; b.textContent=SEQ[i].cmd; b.dataset.i=i;
+    b.onclick=()=>pickCmd(i,b);
+    pool.appendChild(b);
+  });
+  sSay('STEP 1 of 6','Which command comes first? Think about what the RSA key generation needs before it can run.',
+    'Exam angle: the ordering question "which command must exist before crypto key generate rsa?" is a CCNA classic. The answer: hostname and ip domain-name.');
+}
+function pickCmd(i,btn){
+  if(i===seqStep){
+    btn.classList.add('used');
+    const t=document.createElement('div'); t.className='tline';
+    t.innerHTML='<span>R1(config)# </span>'+SEQ[i].cmd;
+    term.appendChild(t); gsap.from(t,{opacity:0,x:-10,duration:.35});
+    seqStep++;
+    if(seqStep<SEQ.length){
+      sSay('STEP '+(seqStep+1)+' of 6', SEQ[i].why+' <span class="hl">Next command?</span>','');
+    }else{
+      sSay('SSH ONLINE // SEQUENCE COMPLETE', SEQ[i].why+' Wrong picks this run: '+seqMiss+'.',
+        'Exam angle: verify with show ip ssh, and test that telnet to the device now fails while ssh -l admin succeeds.');
+      const t2=document.createElement('div'); t2.className='tline';
+      t2.innerHTML='<span>R1# </span>show ip ssh &nbsp;&#8594;&nbsp; SSH Enabled - version 2.0';
+      term.appendChild(t2); gsap.from(t2,{opacity:0,duration:.6,delay:.3});
+    }
+  }else{
+    seqMiss++;
+    document.getElementById('sMiss').textContent=seqMiss;
+    gsap.fromTo(btn,{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});
+    sSay('NOT YET','That command is in the sequence, but not at this step. '+
+      (seqStep<2?'The key generation prerequisites come first.':
+       seqStep===2?'Prerequisites are done: it is time to generate the keys.':
+       'Keys exist: now build the login path, then close the door last.'),'');
+  }
+}
+document.getElementById('sReset').onclick=buildSeq;
+buildSeq();
+
+/* ================= 3. FIX-IT DRILL ================= */
+const F_Q=[
+ {s:"show running-config displays every password in cleartext. Which command stops this?",
+  o:["enable secret","service password-encryption","ip ssh version 2","login local"],a:1,
+  e:"service password-encryption applies type 7 obfuscation to plaintext passwords. Weak, but it ends cleartext in the config."},
+ {s:"You need the strongest available protection for privileged EXEC access. Which command?",
+  o:["enable password Str0ng!","enable secret Str0ng!","service password-encryption","privilege 15"],a:1,
+  e:"enable secret stores a hash and overrides enable password entirely. The exam expects secret every time."},
+ {s:"The monitoring server must poll device statistics, read-only, and the default community strings must go. What do you configure?",
+  o:["snmp-server community public RW","a unique community string with RO, or SNMPv3","open UDP 161 to any","logging host 10.0.0.20"],a:1,
+  e:"Unique string, read-only, or step up to SNMPv3 for authentication and encryption. public and private are known to everyone."},
+ {s:"Before a risky change, you must save a copy of the current configuration to a server. Which command?",
+  o:["copy tftp running-config","copy startup-config running-config","copy running-config tftp","write erase"],a:2,
+  e:"Source first, destination second: from running-config, to tftp. That is a backup."},
+ {s:"The change failed and you must pull the saved configuration back from the server. Which command?",
+  o:["copy running-config tftp","copy tftp running-config","reload","erase startup-config"],a:1,
+  e:"Reversed order, reversed direction: from tftp, to running-config. That is the restore."},
+ {s:"Management sessions to the switch must be allowed only from the 10.9.9.0/24 admin subnet. What is the fix?",
+  o:["an ACL applied with access-class in on the vty lines","transport input telnet","a longer exec-timeout","port security on the uplink"],a:0,
+  e:"Protecting access to the device itself is the vty access-class job, tying Week 2 together: an ACL guarding the hardened door."}
+];
+let fOrder=[], fI=0, fS=0;
+function fRound(){
+  if(fI>=F_Q.length){
+    document.getElementById('fScen').textContent="Done.";
+    document.getElementById('fOpts').innerHTML='';
+    const f=document.getElementById('fFinal'); f.style.display='block';
+    f.textContent=`FINAL: ${fS} / 6 `+(fS===6?"Symptom-to-fix mastery.":fS>=4?"Close. Re-run the audit and retake.":"Back to sections 1 and 2, then retake.");
+    gsap.from(f,{opacity:0,scale:.9,duration:.5});
+    const b=document.getElementById('fStart'); b.style.display='inline-block'; b.textContent="RETAKE";
+    return;
+  }
+  const Q=fOrder[fI];
+  document.getElementById('fRound').textContent=fI+1;
+  document.getElementById('fScen').textContent=Q.s;
+  gsap.from('#fScen',{opacity:0,y:8,duration:.35});
+  const box=document.getElementById('fOpts'); box.innerHTML='';
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=o;
+    b.onclick=()=>{
+      if(box.dataset.done)return; box.dataset.done="1";
+      if(oi===Q.a){fS++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); box.children[Q.a].classList.add('correct');
+        gsap.fromTo('#fScen',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('fScore').textContent=fS;
+      document.getElementById('fScen').textContent=Q.e;
+      setTimeout(()=>{delete box.dataset.done; fI++; fRound();},2300);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('fStart').onclick=e=>{
+  fOrder=shuffle([...F_Q]); fI=0; fS=0;
+  document.getElementById('fScore').textContent="0";
+  document.getElementById('fFinal').style.display='none';
+  e.target.style.display='none'; fRound();
+};
+
+/* ================= PRACTICE TEST ================= */
+const QB=[
+ {t:"S",stem:"A technician enters crypto key generate rsa and the router refuses with a name error. Which two items must be configured first?",
+  o:["enable secret and a banner","hostname and ip domain-name","login local and transport input ssh","an ACL and access-class"],a:1,
+  e:"The RSA key pair is labeled from the hostname and domain name. Without both, generation fails. A guaranteed exam question."},
+ {t:"S",stem:"Which command on the vty lines ensures that only encrypted management sessions are accepted?",
+  o:["login local","transport input ssh","ip ssh version 2","exec-timeout 5 0"],a:1,
+  e:"transport input ssh refuses Telnet on those lines. ip ssh version 2 sets the protocol version but does not block Telnet by itself."},
+ {t:"S",stem:"Which command enforces the modern, more secure version of the SSH protocol on a router?",
+  o:["ssh enable v2","ip ssh version 2","crypto ssh 2","transport ssh 2"],a:1,
+  e:"ip ssh version 2 restricts the device to SSHv2, which requires an RSA modulus of 1024 or higher."},
+ {t:"P",stem:"A router has both enable password cisco and enable secret class configured. Which password grants privileged EXEC access?",
+  o:["cisco","class","Either one works","Neither until service password-encryption runs"],a:1,
+  e:"enable secret always takes precedence, and it is stored as a hash rather than plaintext."},
+ {t:"P",stem:"What does the service password-encryption command actually provide?",
+  o:["Strong hashing of all passwords","Weak, reversible type 7 obfuscation of plaintext passwords","Encryption of management sessions","Automatic password expiration"],a:1,
+  e:"Type 7 stops casual over-the-shoulder reading, nothing more. Real protection comes from the secret commands."},
+ {t:"P",stem:"The command login local is applied to the vty lines. How are users authenticated?",
+  o:["With the line password","Against the device's local username database","Through the enable secret","No authentication is required"],a:1,
+  e:"login local points the line at local username accounts. Plain login (no keyword) uses the line password instead: the trap option."},
+ {t:"N",stem:"What is the primary security advantage of SNMPv3 over SNMPv2c?",
+  o:["Faster polling","Authentication and encryption","Larger MIB support","It uses TCP instead of UDP"],a:1,
+  e:"v2c authenticates with plaintext community strings. v3 adds real authentication and encryption: the tested difference."},
+ {t:"N",stem:"A config contains snmp-server community public RW. Why is this line dangerous? (Choose the best answer.)",
+  o:["It wastes bandwidth","It uses a well-known default string AND grants write access","SNMP should never be enabled","RW communities require TCP"],a:1,
+  e:"Two failures in one line: everyone knows public, and RW lets a poller reconfigure the device."},
+ {t:"M",stem:"Which command backs up the current configuration of a router to a TFTP server?",
+  o:["copy tftp running-config","copy running-config tftp","copy startup-config running-config","backup running-config"],a:1,
+  e:"Copy reads left to right: from running-config, to tftp. The reversed command is the restore."},
+ {t:"M",stem:"A console line is configured with exec-timeout 0 0. What is the security impact?",
+  o:["Sessions disconnect immediately","Idle sessions never time out and stay logged in indefinitely","The console requires two passwords","Logging is disabled"],a:1,
+  e:"0 0 disables the timeout. An unattended console stays privileged forever: fix with a real value like exec-timeout 5 0."}
+];
+const TOPICS={S:"SSH",P:"PASSWORDS & AAA",N:"SNMP",M:"MANAGEMENT"};
+let qOrder=[], qi=0, qScore=0, per={S:[0,0],P:[0,0],N:[0,0],M:[0,0]};
+const qTag=document.getElementById('qTag'), qStem=document.getElementById('qStem'),
+      qOpts=document.getElementById('qOpts'), qExp=document.getElementById('qExp'),
+      qNext=document.getElementById('qNext');
+function ask(){
+  const Q=qOrder[qi];
+  qTag.textContent="QUESTION "+(qi+1)+" of 10 // TOPIC: "+TOPICS[Q.t];
+  qStem.style.textAlign='left'; qStem.textContent=Q.stem;
+  qExp.style.display='none'; qNext.style.display='none';
+  qOpts.innerHTML='';
+  document.getElementById('qN').textContent=qi+1;
+  Q.o.forEach((o,oi)=>{
+    const b=document.createElement('button'); b.className='qopt'; b.textContent=o;
+    b.onclick=()=>{
+      if(qOpts.dataset.done)return; qOpts.dataset.done="1";
+      per[Q.t][1]++;
+      if(oi===Q.a){qScore++; per[Q.t][0]++; b.classList.add('correct');}
+      else{b.classList.add('wrong'); qOpts.children[Q.a].classList.add('correct');
+        gsap.fromTo('#examBox',{x:0},{x:-7,duration:.06,yoyo:true,repeat:5});}
+      document.getElementById('qS').textContent=qScore;
+      qExp.innerHTML=Q.e; qExp.style.display='block'; gsap.from(qExp,{opacity:0,y:-6,duration:.3});
+      qNext.style.display='inline-block';
+      qNext.textContent = qi<9 ? "NEXT QUESTION ▶" : "SEE RESULTS \u{1F3C1}";
+    };
+    qOpts.appendChild(b);
+  });
+  delete qOpts.dataset.done;
+  gsap.from('#qArea',{opacity:.4,duration:.3});
+}
+function results(){
+  document.getElementById('qArea').style.display='none';
+  const res=document.getElementById('qRes'); res.style.display='block';
+  document.getElementById('rScore').textContent=qScore+" / 10";
+  gsap.to('#rFill',{width:(qScore*10)+"%",duration:1.2,ease:'power2.out'});
+  document.getElementById('bdS').textContent=per.S[0]+"/"+per.S[1];
+  document.getElementById('bdP').textContent=per.P[0]+"/"+per.P[1];
+  document.getElementById('bdN').textContent=per.N[0]+"/"+per.N[1];
+  document.getElementById('bdM').textContent=per.M[0]+"/"+per.M[1];
+  const weak=Object.entries(per).filter(([k,v])=>v[1]>0&&v[0]/v[1]<0.75).map(([k])=>TOPICS[k]);
+  document.getElementById('rAdvice').innerHTML =
+    qScore>=9?"Exam-ready on hardening. Take the graded 25-question Week 2 quiz in Canvas.":
+    qScore>=7?("Passing territory. Weak spot: <strong>"+(weak.join(', ')||'careless errors')+"</strong>. Revisit that section in LEARN mode, then retake."):
+    "Below the line. Return to LEARN mode: find all six audit risks with zero false positives, run the SSH sequence clean, finish the drill at 6/6, then retake in a new order.";
+  gsap.from(res,{opacity:0,y:14,duration:.5});
+}
+document.getElementById('qStart').onclick=e=>{
+  e.target.style.display='none';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={S:[0,0],P:[0,0],N:[0,0],M:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+qNext.onclick=()=>{ if(qi<9){qi++; ask();} else results(); };
+document.getElementById('qRetake').onclick=()=>{
+  document.getElementById('qRes').style.display='none';
+  document.getElementById('qArea').style.display='block';
+  qOrder=shuffle([...QB]); qi=0; qScore=0; per={S:[0,0],P:[0,0],N:[0,0],M:[0,0]};
+  document.getElementById('qS').textContent="0"; ask();
+};
+
+gsap.from('.hero',{y:-24,opacity:0,duration:.7,ease:'power2.out'});
+</script>
+</body>
+</html>
